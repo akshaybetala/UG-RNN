@@ -1,0 +1,7 @@
+#!/bin/bash
+#PBS -l walltime=100:00:00
+#PBS -e error.txt
+#PBS -o output.txt
+#PBS -V
+cd /home/alex/UG-RNN/ugrnn
+./ugrnnTrain -d delaney-logP -t delaney-logP -f 7 -m 0 -vl > ./test/delaney-logP/fold7/model0/logModel0

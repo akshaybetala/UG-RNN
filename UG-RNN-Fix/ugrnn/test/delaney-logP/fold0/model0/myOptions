@@ -1,0 +1,12 @@
+classes 1
+ONN_OUTPUTS_NUMBER 1
+ONN_HIDDEN_UNITS 5
+MNN_OUTPUTS_NUMBER 3
+MNN_HIDDEN_UNITS 7
+seed 10
+epsilon 0.01
+nEpochs 10batchBlocks 25
+folds 10
+epsilonMin 0.001
+epsEpoch 25
+properties 1

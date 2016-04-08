@@ -1,0 +1,13 @@
+OBJECTST = ./obj/General.o ./obj/Graph.o ./obj/Molecule.o ./obj/Layer.o ./obj/NNt.o ./obj/NNperc.o ./obj/NN.o ./obj/NNr.o ./obj/mainPredict.o ./obj/UGRNN.o ./obj/myOptions.o ./obj/nodeIO.o
+HEADERST = ./sources/General.h ./sources/Node.h ./sources/Graph.h ./sources/DataSet.h ./sources/Molecule.h ./sources/General.h ./sources/Layer.h ./sources/NNt.h ./sources/NNperc.h ./sources/NN.h ./sources/NNr.h ./sources/UGRNN.h ./sources/myOptions.h ./sources/nodeIO.h
+
+CC	= g++
+#CFLAGS  = -O3 -Q -v -da -g
+CFLAGS = -O3
+
+ugrnnPredict :$(OBJECTST)
+	$(CC) $(CFLAGS) -o $@ $(OBJECTST) $(LLIBS)
+
+./obj/mainPredict.o : ./sources/mainPredict.cxx $(HEADERST)
+	$(CC) -c $(CFLAGS) ./sources/mainPredict.cxx
+	mv mainPredict.o ./obj

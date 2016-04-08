@@ -1,0 +1,2635 @@
+///////////////////////////////////////////////////////
+OPTIONS
+classes 1
+ONN_OUTPUTS_NUMBER 1
+ONN_HIDDEN_UNITS 5
+MNN_OUTPUTS_NUMBER 3
+MNN_HIDDEN_UNITS 7
+seed 10
+epsilon 0.01
+nEpochs 10
+batchBlocks 25
+folds 10
+epsilonMin 0.001
+epsEpoch 25
+properties 1
+///////////////////////////////////////////////////////
+agrume: number of molecules in dataset = 1144
+LOADING MOLECULES...
+loading molecule 0
+loading molecule 1
+loading molecule 2
+loading molecule 3
+loading molecule 4
+loading molecule 5
+loading molecule 6
+loading molecule 7
+loading molecule 8
+loading molecule 9
+loading molecule 10
+loading molecule 11
+loading molecule 12
+loading molecule 13
+loading molecule 14
+loading molecule 15
+loading molecule 16
+loading molecule 17
+loading molecule 18
+loading molecule 19
+loading molecule 20
+loading molecule 21
+loading molecule 22
+loading molecule 23
+loading molecule 24
+STEREO HERE *************
+loading molecule 25
+loading molecule 26
+loading molecule 27
+loading molecule 28
+loading molecule 29
+loading molecule 30
+loading molecule 31
+loading molecule 32
+loading molecule 33
+loading molecule 34
+loading molecule 35
+loading molecule 36
+loading molecule 37
+loading molecule 38
+loading molecule 39
+loading molecule 40
+loading molecule 41
+loading molecule 42
+loading molecule 43
+loading molecule 44
+loading molecule 45
+loading molecule 46
+loading molecule 47
+loading molecule 48
+loading molecule 49
+loading molecule 50
+loading molecule 51
+loading molecule 52
+loading molecule 53
+loading molecule 54
+loading molecule 55
+loading molecule 56
+loading molecule 57
+loading molecule 58
+loading molecule 59
+loading molecule 60
+loading molecule 61
+loading molecule 62
+loading molecule 63
+loading molecule 64
+loading molecule 65
+loading molecule 66
+loading molecule 67
+loading molecule 68
+loading molecule 69
+loading molecule 70
+loading molecule 71
+loading molecule 72
+loading molecule 73
+loading molecule 74
+loading molecule 75
+loading molecule 76
+loading molecule 77
+loading molecule 78
+loading molecule 79
+loading molecule 80
+loading molecule 81
+loading molecule 82
+loading molecule 83
+loading molecule 84
+loading molecule 85
+loading molecule 86
+loading molecule 87
+STEREO HERE *************
+loading molecule 88
+loading molecule 89
+loading molecule 90
+loading molecule 91
+loading molecule 92
+loading molecule 93
+loading molecule 94
+loading molecule 95
+loading molecule 96
+loading molecule 97
+loading molecule 98
+loading molecule 99
+loading molecule 100
+loading molecule 101
+loading molecule 102
+loading molecule 103
+loading molecule 104
+loading molecule 105
+loading molecule 106
+loading molecule 107
+loading molecule 108
+loading molecule 109
+loading molecule 110
+loading molecule 111
+loading molecule 112
+loading molecule 113
+STEREO HERE *************
+loading molecule 114
+loading molecule 115
+loading molecule 116
+loading molecule 117
+loading molecule 118
+loading molecule 119
+loading molecule 120
+loading molecule 121
+loading molecule 122
+loading molecule 123
+loading molecule 124
+loading molecule 125
+loading molecule 126
+loading molecule 127
+loading molecule 128
+loading molecule 129
+loading molecule 130
+loading molecule 131
+loading molecule 132
+loading molecule 133
+loading molecule 134
+loading molecule 135
+loading molecule 136
+loading molecule 137
+loading molecule 138
+loading molecule 139
+loading molecule 140
+loading molecule 141
+loading molecule 142
+loading molecule 143
+loading molecule 144
+loading molecule 145
+loading molecule 146
+loading molecule 147
+loading molecule 148
+loading molecule 149
+loading molecule 150
+loading molecule 151
+loading molecule 152
+loading molecule 153
+loading molecule 154
+loading molecule 155
+loading molecule 156
+loading molecule 157
+loading molecule 158
+loading molecule 159
+loading molecule 160
+loading molecule 161
+loading molecule 162
+loading molecule 163
+loading molecule 164
+STEREO HERE *************
+loading molecule 165
+loading molecule 166
+loading molecule 167
+loading molecule 168
+loading molecule 169
+loading molecule 170
+loading molecule 171
+loading molecule 172
+loading molecule 173
+loading molecule 174
+loading molecule 175
+loading molecule 176
+loading molecule 177
+loading molecule 178
+loading molecule 179
+loading molecule 180
+loading molecule 181
+loading molecule 182
+loading molecule 183
+loading molecule 184
+loading molecule 185
+loading molecule 186
+loading molecule 187
+loading molecule 188
+loading molecule 189
+loading molecule 190
+loading molecule 191
+loading molecule 192
+loading molecule 193
+loading molecule 194
+loading molecule 195
+loading molecule 196
+loading molecule 197
+loading molecule 198
+loading molecule 199
+loading molecule 200
+loading molecule 201
+STEREO HERE *************
+loading molecule 202
+loading molecule 203
+loading molecule 204
+loading molecule 205
+loading molecule 206
+loading molecule 207
+loading molecule 208
+loading molecule 209
+loading molecule 210
+STEREO HERE *************
+loading molecule 211
+loading molecule 212
+loading molecule 213
+STEREO HERE *************
+loading molecule 214
+loading molecule 215
+loading molecule 216
+STEREO HERE *************
+loading molecule 217
+loading molecule 218
+STEREO HERE *************
+loading molecule 219
+loading molecule 220
+loading molecule 221
+loading molecule 222
+loading molecule 223
+loading molecule 224
+loading molecule 225
+loading molecule 226
+loading molecule 227
+loading molecule 228
+loading molecule 229
+loading molecule 230
+loading molecule 231
+loading molecule 232
+STEREO HERE *************
+loading molecule 233
+loading molecule 234
+loading molecule 235
+loading molecule 236
+STEREO HERE *************
+loading molecule 237
+loading molecule 238
+loading molecule 239
+loading molecule 240
+STEREO HERE *************
+loading molecule 241
+loading molecule 242
+loading molecule 243
+loading molecule 244
+loading molecule 245
+loading molecule 246
+loading molecule 247
+loading molecule 248
+loading molecule 249
+loading molecule 250
+STEREO HERE *************
+loading molecule 251
+loading molecule 252
+STEREO HERE *************
+loading molecule 253
+loading molecule 254
+STEREO HERE *************
+loading molecule 255
+loading molecule 256
+loading molecule 257
+loading molecule 258
+loading molecule 259
+STEREO HERE *************
+loading molecule 260
+loading molecule 261
+STEREO HERE *************
+loading molecule 262
+loading molecule 263
+loading molecule 264
+loading molecule 265
+loading molecule 266
+loading molecule 267
+loading molecule 268
+loading molecule 269
+loading molecule 270
+loading molecule 271
+loading molecule 272
+loading molecule 273
+loading molecule 274
+loading molecule 275
+loading molecule 276
+loading molecule 277
+loading molecule 278
+loading molecule 279
+STEREO HERE *************
+loading molecule 280
+loading molecule 281
+STEREO HERE *************
+loading molecule 282
+loading molecule 283
+loading molecule 284
+loading molecule 285
+loading molecule 286
+STEREO HERE *************
+loading molecule 287
+loading molecule 288
+STEREO HERE *************
+loading molecule 289
+STEREO HERE *************
+loading molecule 290
+STEREO HERE *************
+loading molecule 291
+STEREO HERE *************
+loading molecule 292
+STEREO HERE *************
+loading molecule 293
+loading molecule 294
+loading molecule 295
+loading molecule 296
+STEREO HERE *************
+loading molecule 297
+loading molecule 298
+loading molecule 299
+loading molecule 300
+STEREO HERE *************
+loading molecule 301
+loading molecule 302
+loading molecule 303
+loading molecule 304
+loading molecule 305
+loading molecule 306
+loading molecule 307
+loading molecule 308
+loading molecule 309
+loading molecule 310
+loading molecule 311
+loading molecule 312
+loading molecule 313
+loading molecule 314
+loading molecule 315
+loading molecule 316
+loading molecule 317
+loading molecule 318
+loading molecule 319
+STEREO HERE *************
+loading molecule 320
+loading molecule 321
+loading molecule 322
+loading molecule 323
+loading molecule 324
+loading molecule 325
+loading molecule 326
+loading molecule 327
+loading molecule 328
+loading molecule 329
+loading molecule 330
+loading molecule 331
+loading molecule 332
+loading molecule 333
+loading molecule 334
+loading molecule 335
+loading molecule 336
+loading molecule 337
+loading molecule 338
+loading molecule 339
+loading molecule 340
+loading molecule 341
+loading molecule 342
+loading molecule 343
+loading molecule 344
+loading molecule 345
+loading molecule 346
+loading molecule 347
+loading molecule 348
+loading molecule 349
+loading molecule 350
+loading molecule 351
+loading molecule 352
+loading molecule 353
+loading molecule 354
+loading molecule 355
+loading molecule 356
+loading molecule 357
+loading molecule 358
+loading molecule 359
+loading molecule 360
+loading molecule 361
+loading molecule 362
+loading molecule 363
+loading molecule 364
+loading molecule 365
+loading molecule 366
+STEREO HERE *************
+loading molecule 367
+loading molecule 368
+loading molecule 369
+loading molecule 370
+loading molecule 371
+loading molecule 372
+loading molecule 373
+loading molecule 374
+loading molecule 375
+loading molecule 376
+STEREO HERE *************
+loading molecule 377
+loading molecule 378
+loading molecule 379
+loading molecule 380
+loading molecule 381
+loading molecule 382
+STEREO HERE *************
+loading molecule 383
+loading molecule 384
+loading molecule 385
+loading molecule 386
+loading molecule 387
+loading molecule 388
+loading molecule 389
+loading molecule 390
+STEREO HERE *************
+loading molecule 391
+loading molecule 392
+loading molecule 393
+loading molecule 394
+loading molecule 395
+loading molecule 396
+loading molecule 397
+loading molecule 398
+loading molecule 399
+loading molecule 400
+loading molecule 401
+loading molecule 402
+loading molecule 403
+loading molecule 404
+loading molecule 405
+loading molecule 406
+loading molecule 407
+loading molecule 408
+loading molecule 409
+loading molecule 410
+loading molecule 411
+loading molecule 412
+loading molecule 413
+loading molecule 414
+loading molecule 415
+loading molecule 416
+loading molecule 417
+loading molecule 418
+STEREO HERE *************
+loading molecule 419
+loading molecule 420
+loading molecule 421
+loading molecule 422
+loading molecule 423
+loading molecule 424
+loading molecule 425
+loading molecule 426
+loading molecule 427
+loading molecule 428
+loading molecule 429
+STEREO HERE *************
+loading molecule 430
+loading molecule 431
+loading molecule 432
+loading molecule 433
+loading molecule 434
+loading molecule 435
+loading molecule 436
+loading molecule 437
+loading molecule 438
+loading molecule 439
+loading molecule 440
+loading molecule 441
+loading molecule 442
+loading molecule 443
+STEREO HERE *************
+loading molecule 444
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 445
+loading molecule 446
+loading molecule 447
+loading molecule 448
+loading molecule 449
+loading molecule 450
+loading molecule 451
+STEREO HERE *************
+loading molecule 452
+loading molecule 453
+loading molecule 454
+loading molecule 455
+STEREO HERE *************
+loading molecule 456
+loading molecule 457
+loading molecule 458
+STEREO HERE *************
+loading molecule 459
+loading molecule 460
+STEREO HERE *************
+loading molecule 461
+loading molecule 462
+loading molecule 463
+loading molecule 464
+loading molecule 465
+STEREO HERE *************
+loading molecule 466
+loading molecule 467
+loading molecule 468
+loading molecule 469
+loading molecule 470
+loading molecule 471
+loading molecule 472
+loading molecule 473
+loading molecule 474
+loading molecule 475
+loading molecule 476
+loading molecule 477
+STEREO HERE *************
+loading molecule 478
+loading molecule 479
+loading molecule 480
+loading molecule 481
+loading molecule 482
+loading molecule 483
+loading molecule 484
+STEREO HERE *************
+loading molecule 485
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 486
+loading molecule 487
+loading molecule 488
+STEREO HERE *************
+loading molecule 489
+loading molecule 490
+loading molecule 491
+loading molecule 492
+loading molecule 493
+loading molecule 494
+loading molecule 495
+loading molecule 496
+loading molecule 497
+loading molecule 498
+loading molecule 499
+loading molecule 500
+loading molecule 501
+STEREO HERE *************
+loading molecule 502
+loading molecule 503
+loading molecule 504
+loading molecule 505
+loading molecule 506
+loading molecule 507
+loading molecule 508
+loading molecule 509
+loading molecule 510
+loading molecule 511
+loading molecule 512
+loading molecule 513
+loading molecule 514
+loading molecule 515
+loading molecule 516
+loading molecule 517
+loading molecule 518
+loading molecule 519
+loading molecule 520
+loading molecule 521
+loading molecule 522
+loading molecule 523
+STEREO HERE *************
+loading molecule 524
+loading molecule 525
+loading molecule 526
+loading molecule 527
+loading molecule 528
+loading molecule 529
+loading molecule 530
+loading molecule 531
+loading molecule 532
+loading molecule 533
+loading molecule 534
+loading molecule 535
+loading molecule 536
+loading molecule 537
+loading molecule 538
+STEREO HERE *************
+loading molecule 539
+loading molecule 540
+loading molecule 541
+loading molecule 542
+loading molecule 543
+loading molecule 544
+loading molecule 545
+loading molecule 546
+loading molecule 547
+loading molecule 548
+STEREO HERE *************
+loading molecule 549
+STEREO HERE *************
+loading molecule 550
+STEREO HERE *************
+loading molecule 551
+loading molecule 552
+loading molecule 553
+loading molecule 554
+STEREO HERE *************
+loading molecule 555
+loading molecule 556
+STEREO HERE *************
+loading molecule 557
+loading molecule 558
+loading molecule 559
+STEREO HERE *************
+loading molecule 560
+loading molecule 561
+loading molecule 562
+loading molecule 563
+loading molecule 564
+loading molecule 565
+loading molecule 566
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 567
+STEREO HERE *************
+loading molecule 568
+STEREO HERE *************
+loading molecule 569
+loading molecule 570
+loading molecule 571
+loading molecule 572
+loading molecule 573
+loading molecule 574
+loading molecule 575
+loading molecule 576
+loading molecule 577
+loading molecule 578
+loading molecule 579
+loading molecule 580
+loading molecule 581
+STEREO HERE *************
+loading molecule 582
+loading molecule 583
+loading molecule 584
+loading molecule 585
+loading molecule 586
+loading molecule 587
+loading molecule 588
+loading molecule 589
+loading molecule 590
+loading molecule 591
+loading molecule 592
+loading molecule 593
+loading molecule 594
+loading molecule 595
+loading molecule 596
+loading molecule 597
+loading molecule 598
+loading molecule 599
+loading molecule 600
+loading molecule 601
+loading molecule 602
+loading molecule 603
+loading molecule 604
+loading molecule 605
+loading molecule 606
+loading molecule 607
+loading molecule 608
+STEREO HERE *************
+loading molecule 609
+loading molecule 610
+loading molecule 611
+loading molecule 612
+loading molecule 613
+loading molecule 614
+STEREO HERE *************
+loading molecule 615
+loading molecule 616
+loading molecule 617
+loading molecule 618
+loading molecule 619
+loading molecule 620
+loading molecule 621
+loading molecule 622
+loading molecule 623
+loading molecule 624
+loading molecule 625
+loading molecule 626
+STEREO HERE *************
+loading molecule 627
+loading molecule 628
+loading molecule 629
+loading molecule 630
+loading molecule 631
+loading molecule 632
+loading molecule 633
+loading molecule 634
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 635
+loading molecule 636
+loading molecule 637
+loading molecule 638
+loading molecule 639
+loading molecule 640
+loading molecule 641
+loading molecule 642
+loading molecule 643
+loading molecule 644
+loading molecule 645
+loading molecule 646
+loading molecule 647
+loading molecule 648
+loading molecule 649
+loading molecule 650
+loading molecule 651
+loading molecule 652
+loading molecule 653
+loading molecule 654
+loading molecule 655
+loading molecule 656
+loading molecule 657
+loading molecule 658
+loading molecule 659
+loading molecule 660
+loading molecule 661
+loading molecule 662
+loading molecule 663
+loading molecule 664
+loading molecule 665
+loading molecule 666
+loading molecule 667
+loading molecule 668
+loading molecule 669
+loading molecule 670
+loading molecule 671
+loading molecule 672
+STEREO HERE *************
+loading molecule 673
+loading molecule 674
+loading molecule 675
+loading molecule 676
+STEREO HERE *************
+loading molecule 677
+loading molecule 678
+loading molecule 679
+loading molecule 680
+loading molecule 681
+STEREO HERE *************
+loading molecule 682
+STEREO HERE *************
+loading molecule 683
+loading molecule 684
+loading molecule 685
+STEREO HERE *************
+loading molecule 686
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 687
+loading molecule 688
+loading molecule 689
+loading molecule 690
+loading molecule 691
+loading molecule 692
+loading molecule 693
+loading molecule 694
+loading molecule 695
+loading molecule 696
+loading molecule 697
+loading molecule 698
+loading molecule 699
+STEREO HERE *************
+loading molecule 700
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 701
+loading molecule 702
+loading molecule 703
+loading molecule 704
+loading molecule 705
+loading molecule 706
+loading molecule 707
+STEREO HERE *************
+loading molecule 708
+loading molecule 709
+loading molecule 710
+loading molecule 711
+loading molecule 712
+loading molecule 713
+loading molecule 714
+loading molecule 715
+STEREO HERE *************
+loading molecule 716
+loading molecule 717
+loading molecule 718
+loading molecule 719
+loading molecule 720
+loading molecule 721
+loading molecule 722
+loading molecule 723
+loading molecule 724
+loading molecule 725
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 726
+loading molecule 727
+loading molecule 728
+loading molecule 729
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 730
+loading molecule 731
+loading molecule 732
+loading molecule 733
+loading molecule 734
+loading molecule 735
+loading molecule 736
+loading molecule 737
+loading molecule 738
+loading molecule 739
+loading molecule 740
+loading molecule 741
+loading molecule 742
+loading molecule 743
+loading molecule 744
+loading molecule 745
+loading molecule 746
+loading molecule 747
+loading molecule 748
+loading molecule 749
+loading molecule 750
+loading molecule 751
+loading molecule 752
+loading molecule 753
+loading molecule 754
+loading molecule 755
+loading molecule 756
+loading molecule 757
+loading molecule 758
+loading molecule 759
+loading molecule 760
+loading molecule 761
+loading molecule 762
+loading molecule 763
+loading molecule 764
+loading molecule 765
+loading molecule 766
+loading molecule 767
+loading molecule 768
+loading molecule 769
+loading molecule 770
+loading molecule 771
+loading molecule 772
+loading molecule 773
+loading molecule 774
+STEREO HERE *************
+loading molecule 775
+loading molecule 776
+loading molecule 777
+loading molecule 778
+STEREO HERE *************
+loading molecule 779
+STEREO HERE *************
+loading molecule 780
+loading molecule 781
+loading molecule 782
+STEREO HERE *************
+STEREO HERE *************
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 783
+loading molecule 784
+loading molecule 785
+loading molecule 786
+loading molecule 787
+loading molecule 788
+loading molecule 789
+loading molecule 790
+loading molecule 791
+loading molecule 792
+loading molecule 793
+loading molecule 794
+loading molecule 795
+loading molecule 796
+loading molecule 797
+loading molecule 798
+loading molecule 799
+STEREO HERE *************
+loading molecule 800
+loading molecule 801
+loading molecule 802
+loading molecule 803
+loading molecule 804
+loading molecule 805
+STEREO HERE *************
+loading molecule 806
+STEREO HERE *************
+loading molecule 807
+loading molecule 808
+loading molecule 809
+STEREO HERE *************
+loading molecule 810
+loading molecule 811
+loading molecule 812
+loading molecule 813
+loading molecule 814
+loading molecule 815
+loading molecule 816
+loading molecule 817
+loading molecule 818
+loading molecule 819
+loading molecule 820
+loading molecule 821
+loading molecule 822
+loading molecule 823
+loading molecule 824
+loading molecule 825
+loading molecule 826
+loading molecule 827
+loading molecule 828
+loading molecule 829
+loading molecule 830
+loading molecule 831
+loading molecule 832
+loading molecule 833
+loading molecule 834
+STEREO HERE *************
+loading molecule 835
+loading molecule 836
+loading molecule 837
+loading molecule 838
+loading molecule 839
+loading molecule 840
+loading molecule 841
+loading molecule 842
+loading molecule 843
+loading molecule 844
+loading molecule 845
+loading molecule 846
+loading molecule 847
+loading molecule 848
+loading molecule 849
+loading molecule 850
+loading molecule 851
+loading molecule 852
+loading molecule 853
+loading molecule 854
+loading molecule 855
+loading molecule 856
+STEREO HERE *************
+loading molecule 857
+STEREO HERE *************
+loading molecule 858
+loading molecule 859
+loading molecule 860
+loading molecule 861
+loading molecule 862
+loading molecule 863
+loading molecule 864
+loading molecule 865
+loading molecule 866
+loading molecule 867
+loading molecule 868
+loading molecule 869
+loading molecule 870
+loading molecule 871
+loading molecule 872
+loading molecule 873
+loading molecule 874
+loading molecule 875
+loading molecule 876
+loading molecule 877
+loading molecule 878
+loading molecule 879
+loading molecule 880
+loading molecule 881
+STEREO HERE *************
+loading molecule 882
+loading molecule 883
+loading molecule 884
+loading molecule 885
+loading molecule 886
+STEREO HERE *************
+loading molecule 887
+loading molecule 888
+loading molecule 889
+loading molecule 890
+loading molecule 891
+loading molecule 892
+loading molecule 893
+loading molecule 894
+loading molecule 895
+loading molecule 896
+loading molecule 897
+loading molecule 898
+loading molecule 899
+loading molecule 900
+loading molecule 901
+loading molecule 902
+loading molecule 903
+loading molecule 904
+loading molecule 905
+loading molecule 906
+loading molecule 907
+loading molecule 908
+loading molecule 909
+loading molecule 910
+loading molecule 911
+STEREO HERE *************
+loading molecule 912
+loading molecule 913
+loading molecule 914
+loading molecule 915
+loading molecule 916
+loading molecule 917
+loading molecule 918
+loading molecule 919
+loading molecule 920
+loading molecule 921
+loading molecule 922
+loading molecule 923
+loading molecule 924
+loading molecule 925
+loading molecule 926
+loading molecule 927
+loading molecule 928
+loading molecule 929
+loading molecule 930
+loading molecule 931
+loading molecule 932
+STEREO HERE *************
+loading molecule 933
+loading molecule 934
+loading molecule 935
+loading molecule 936
+loading molecule 937
+loading molecule 938
+loading molecule 939
+loading molecule 940
+loading molecule 941
+loading molecule 942
+loading molecule 943
+loading molecule 944
+loading molecule 945
+loading molecule 946
+loading molecule 947
+loading molecule 948
+loading molecule 949
+loading molecule 950
+loading molecule 951
+loading molecule 952
+loading molecule 953
+loading molecule 954
+loading molecule 955
+loading molecule 956
+loading molecule 957
+loading molecule 958
+loading molecule 959
+loading molecule 960
+loading molecule 961
+loading molecule 962
+loading molecule 963
+loading molecule 964
+loading molecule 965
+loading molecule 966
+loading molecule 967
+loading molecule 968
+loading molecule 969
+loading molecule 970
+loading molecule 971
+loading molecule 972
+loading molecule 973
+loading molecule 974
+loading molecule 975
+loading molecule 976
+loading molecule 977
+loading molecule 978
+loading molecule 979
+loading molecule 980
+loading molecule 981
+loading molecule 982
+loading molecule 983
+loading molecule 984
+loading molecule 985
+loading molecule 986
+loading molecule 987
+loading molecule 988
+loading molecule 989
+loading molecule 990
+loading molecule 991
+loading molecule 992
+loading molecule 993
+loading molecule 994
+loading molecule 995
+loading molecule 996
+loading molecule 997
+loading molecule 998
+loading molecule 999
+loading molecule 1000
+loading molecule 1001
+loading molecule 1002
+loading molecule 1003
+loading molecule 1004
+loading molecule 1005
+loading molecule 1006
+loading molecule 1007
+loading molecule 1008
+loading molecule 1009
+loading molecule 1010
+loading molecule 1011
+loading molecule 1012
+loading molecule 1013
+loading molecule 1014
+loading molecule 1015
+loading molecule 1016
+loading molecule 1017
+loading molecule 1018
+loading molecule 1019
+loading molecule 1020
+loading molecule 1021
+loading molecule 1022
+loading molecule 1023
+loading molecule 1024
+loading molecule 1025
+STEREO HERE *************
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 1026
+loading molecule 1027
+loading molecule 1028
+loading molecule 1029
+loading molecule 1030
+loading molecule 1031
+loading molecule 1032
+loading molecule 1033
+loading molecule 1034
+loading molecule 1035
+loading molecule 1036
+loading molecule 1037
+loading molecule 1038
+loading molecule 1039
+loading molecule 1040
+loading molecule 1041
+loading molecule 1042
+loading molecule 1043
+loading molecule 1044
+loading molecule 1045
+loading molecule 1046
+loading molecule 1047
+loading molecule 1048
+loading molecule 1049
+loading molecule 1050
+loading molecule 1051
+loading molecule 1052
+STEREO HERE *************
+loading molecule 1053
+loading molecule 1054
+loading molecule 1055
+loading molecule 1056
+STEREO HERE *************
+STEREO HERE *************
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 1057
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 1058
+loading molecule 1059
+loading molecule 1060
+loading molecule 1061
+loading molecule 1062
+loading molecule 1063
+loading molecule 1064
+loading molecule 1065
+loading molecule 1066
+loading molecule 1067
+loading molecule 1068
+loading molecule 1069
+STEREO HERE *************
+loading molecule 1070
+loading molecule 1071
+loading molecule 1072
+loading molecule 1073
+loading molecule 1074
+loading molecule 1075
+loading molecule 1076
+loading molecule 1077
+loading molecule 1078
+loading molecule 1079
+loading molecule 1080
+loading molecule 1081
+loading molecule 1082
+loading molecule 1083
+loading molecule 1084
+loading molecule 1085
+loading molecule 1086
+loading molecule 1087
+loading molecule 1088
+loading molecule 1089
+loading molecule 1090
+loading molecule 1091
+loading molecule 1092
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 1093
+STEREO HERE *************
+loading molecule 1094
+loading molecule 1095
+loading molecule 1096
+loading molecule 1097
+STEREO HERE *************
+loading molecule 1098
+loading molecule 1099
+loading molecule 1100
+loading molecule 1101
+loading molecule 1102
+loading molecule 1103
+loading molecule 1104
+loading molecule 1105
+loading molecule 1106
+loading molecule 1107
+loading molecule 1108
+loading molecule 1109
+loading molecule 1110
+STEREO HERE *************
+loading molecule 1111
+loading molecule 1112
+loading molecule 1113
+loading molecule 1114
+loading molecule 1115
+loading molecule 1116
+loading molecule 1117
+loading molecule 1118
+loading molecule 1119
+STEREO HERE *************
+loading molecule 1120
+loading molecule 1121
+loading molecule 1122
+loading molecule 1123
+loading molecule 1124
+loading molecule 1125
+loading molecule 1126
+loading molecule 1127
+loading molecule 1128
+loading molecule 1129
+loading molecule 1130
+loading molecule 1131
+STEREO HERE *************
+STEREO HERE *************
+loading molecule 1132
+loading molecule 1133
+loading molecule 1134
+loading molecule 1135
+loading molecule 1136
+loading molecule 1137
+loading molecule 1138
+loading molecule 1139
+STEREO HERE *************
+loading molecule 1140
+loading molecule 1141
+STEREO HERE *************
+loading molecule 1142
+loading molecule 1143
+...DONE
+CPU_time_usage = 60
+test/delaney-logP/fold0/model0/logTP
+test/delaney-logP/fold0/model0/logTPVal
+test/delaney-logP/fold0/model0/totalAtoms
+Seed=10
+Cl C F O R6 Br N R3 S R5 I H P R7 R4 R8 
+MAX_CHILDREN=10
+TOTAL_INPUTS=41
+ATOM_NUMBER=16
+popertiesNum=1
+calcuating mean and std 
+.....................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+-2 0.228376
+-1.74 0.248103
+-1.48 0.26783
+-3.04 0.149469
+-1.29 0.282246
+-1.64 0.25569
+-0.43 0.347496
+-4.57 0.0333839
+-4.37 0.0485584
+-4 0.0766313
+-3.2 0.137329
+-6.98 -0.149469
+-5.56 -0.0417299
+-4.59 0.0318665
+-4.5 0.038695
+-3.59 0.107739
+-3.31 0.128983
+0.62 0.427162
+-1.68 0.252656
+-3.05 0.14871
+-1.06 0.299697
+-1.6 0.258725
+-2.74 0.172231
+-0.77 0.3217
+-3.28 0.131259
+-3.1 0.144917
+-0.59 0.335357
+-4.48 0.0402124
+-3.4 0.122155
+-2.89 0.16085
+0.81 0.441578
+-1.87 0.23824
+-3.54 0.111533
+-3.04 0.149469
+-1.62 0.257208
+-1.46 0.269347
+-4.29 0.0546282
+-2.29 0.206373
+-0.17 0.367223
+-2.06 0.223824
+-4.07 0.0713202
+-3.27 0.132018
+-3.75 0.0955994
+-1.97 0.230653
+-4.14 0.0660091
+-2.09 0.221548
+-4.679 0.0251138
+-2.68 0.176783
+-2.68 0.176783
+-1.74 0.248103
+-3.999 0.0767071
+-4.22 0.0599393
+-2.43 0.195751
+-2.37 0.200303
+-3.81 0.091047
+-4.35 0.0500759
+-5.06 -0.00379363
+-3.08 0.146434
+-1.73 0.248862
+0 0.380121
+-1.94 0.232929
+-1.24 0.286039
+-1.32 0.27997
+-2.03 0.2261
+-4 0.0766313
+-3.12 0.143399
+-3.93 0.0819423
+-2.73 0.172989
+-1.47 0.268589
+-3.63 0.104704
+-5.51 -0.0379363
+-4.8 0.0159332
+-1.81 0.242792
+-3.73 0.0971168
+-3.01 0.151745
+-7 -0.150986
+-1.24 0.286039
+-3.23 0.135053
+-0.59 0.335357
+-2.36 0.201062
+-2.96 0.155539
+-4.55 0.0349014
+-2.29 0.206373
+-3.27 0.132018
+-5.22 -0.0159332
+-3.7 0.099393
+-5.85 -0.0637329
+-0.807 0.318892
+-2.22 0.211684
+-1.92 0.234446
+-0.8 0.319423
+-3.01 0.151745
+-5.05 -0.0030349
+-4.24 0.0584219
+-8.4 -0.257208
+-2.39 0.198786
+-4.44 0.0432473
+-3.66 0.102428
+-6.35 -0.101669
+-2.68 0.176783
+-1.64 0.25569
+-0.92 0.310319
+0.62 0.427162
+-5.84 -0.0629742
+-11.6 -0.5
+-9.16 -0.314871
+-8.01 -0.227618
+-9.15 -0.314112
+-7.28 -0.172231
+-7.92 -0.220789
+-8.94 -0.298179
+-7.68 -0.20258
+-7.21 -0.16692
+-7.43 -0.183612
+-7.42 -0.182853
+-6.47 -0.110774
+-4.36 0.0493171
+-8.71 -0.280728
+-6.57 -0.118361
+-7.32 -0.175266
+-4.74 0.0204856
+-5.05 -0.0030349
+-7.39 -0.180577
+-1.04 0.301214
+-3.55 0.110774
+-4.36 0.0493171
+-0.4 0.349772
+-5.27 -0.0197269
+-7.82 -0.213202
+-7.66 -0.201062
+-7.39 -0.180577
+-7.8 -0.211684
+-7.92 -0.220789
+-7.25 -0.169954
+-3.15 0.141123
+-6.29 -0.0971168
+-6.26 -0.0948407
+-2.67 0.177542
+-4.8 0.0159332
+-3.37 0.124431
+-6.01 -0.0758725
+-2.67 0.177542
+-2.64 0.179818
+-3.48 0.116085
+-2.4 0.198027
+-3.65 0.103187
+-4.72 0.022003
+-4.28 0.0553869
+0.38 0.408953
+-6.27 -0.0955994
+-6.25 -0.0940819
+-2.21 0.212443
+-6.14 -0.085736
+-2.05 0.224583
+-3.22 0.135812
+-1.55 0.262519
+-0.92 0.310319
+-1.22 0.287557
+-1.3 0.281487
+-4.26 0.0569044
+-1.19 0.289833
+0.38 0.408953
+-5.28 -0.0204856
+-5.25 -0.0182094
+-1.79 0.24431
+-4.89 0.0091047
+-1.29 0.282246
+0.45 0.414264
+-3 0.152504
+-5.21 -0.0151745
+-1.94 0.232929
+-4.4 0.0462822
+-4.4 0.0462822
+-1.59 0.259484
+-2.23 0.210926
+0.52 0.419575
+0.32 0.404401
+-0.42 0.348255
+-2.51 0.189681
+-2.46 0.193475
+-1.96 0.231411
+-4.14 0.0660091
+-1.06 0.299697
+-1.41 0.273141
+-3.52 0.11305
+-0.31 0.356601
+-3.3 0.129742
+0.51 0.418816
+-1.17 0.291351
+-2.46 0.193475
+-1.52 0.264795
+-2.13 0.218513
+-4.29 0.0546282
+-3.21 0.136571
+-1.55 0.262519
+-1.45 0.270106
+-0.89 0.312595
+-0.8 0.319423
+1.02 0.457511
+-2.09 0.221548
+-3.76 0.0948407
+-1.11 0.295903
+-2.56 0.185888
+-2.03 0.2261
+-2.73 0.172989
+-3.03 0.150228
+-1.72 0.249621
+-0.49 0.342944
+-0.7 0.327011
+-6.96 -0.147951
+0.15 0.391502
+-3.18 0.138847
+-0.47 0.344461
+-5.08 -0.00531108
+-3.77 0.0940819
+-3.74 0.0963581
+-5.84 -0.0629742
+-0.62 0.33308
+0.1 0.387709
+-2.55 0.186646
+-2.33 0.203338
+-0.12 0.371017
+0.11 0.388467
+-2.28 0.207132
+-0.62 0.33308
+-2.58 0.18437
+-2.09 0.221548
+-2.05 0.224583
+-0.29 0.358118
+-0.19 0.365706
+-0.7 0.327011
+0.43 0.412747
+1.07 0.461305
+-2.94 0.157056
+-0.62 0.33308
+-0.72 0.325493
+-4.23 0.0591806
+-3.2 0.137329
+-1.25 0.285281
+-1.38 0.275417
+0.36 0.407436
+-6.39 -0.104704
+-1.34 0.278452
+0.38 0.408953
+-5.071 -0.00462822
+-2.78 0.169196
+-4.88 0.00986343
+-0.7 0.327011
+-0.29 0.358118
+-4.47 0.0409712
+-0.85 0.31563
+-1.47 0.268589
+-0.8 0.319423
+-0.83 0.317147
+-5.886 -0.0664643
+-1.99 0.229135
+-2.73 0.172989
+-0.18 0.366464
+-0.12 0.371017
+-0.72 0.325493
+-0.71 0.326252
+-1.6 0.258725
+-0.98 0.305766
+-0.36 0.352807
+-0.51 0.341426
+-7.92 -0.220789
+-5.16 -0.0113809
+-2.42 0.19651
+-3.68 0.10091
+-0.68 0.328528
+-6.523 -0.114795
+-0.24 0.361912
+-0.28 0.358877
+-4.678 0.0251897
+-4.907 0.00781487
+-6.56 -0.117602
+-1.09 0.29742
+-3.19 0.138088
+-2.78 0.169196
+-3.08 0.146434
+-3.11 0.144158
+-1.4 0.2739
+-1.3 0.281487
+-2.59 0.183612
+1.02 0.457511
+-3.77 0.0940819
+-1.11 0.295903
+-0.8 0.319423
+-4.62 0.0295903
+-1.14 0.293627
+-0.466 0.344765
+-2.692 0.175873
+-0.15 0.368741
+-2.253 0.209181
+-2.593 0.183384
+-2.077 0.222534
+-2.766 0.170258
+-1.99 0.229135
+-7.01 -0.151745
+-1.614 0.257663
+-1.708 0.250531
+-1.16 0.292109
+-2.369 0.200379
+-2.658 0.178452
+-2.148 0.217147
+-2.322 0.203945
+-2.54 0.187405
+-1.228 0.28695
+-6.59 -0.119879
+-1.458 0.269499
+-2.58 0.18437
+-6.2 -0.0902883
+-2.16 0.216237
+-1.139 0.293703
+-6.57 -0.118361
+-0.91 0.311077
+-0.854 0.315326
+-2.42 0.19651
+-6.57 -0.118361
+-4.73 0.0212443
+-5.89 -0.0667678
+-6.237 -0.0930956
+-4.63 0.0288316
+-3.96 0.0796662
+1.58 0.5
+-1.33 0.279211
+-2.36 0.201062
+0.26 0.399848
+-1.28 0.283005
+-3.59 0.107739
+-3.67 0.101669
+0.57 0.423369
+0.15 0.391502
+-3.48 0.116085
+-3.26 0.132777
+-3.85 0.0880121
+-6.307 -0.0984067
+-1.6 0.258725
+-0.83 0.317147
+-2.266 0.208194
+-1.25 0.285281
+-1.99 0.229135
+-3.04 0.149469
+-0.77 0.3217
+-2.36 0.201062
+-0.364 0.352504
+-0.36 0.352807
+-5.47 -0.0349014
+0.522 0.419727
+-2.468 0.192868
+-0.624 0.332777
+-3.69 0.100152
+-4.402 0.0461305
+-3.13 0.14264
+-0.41 0.349014
+-4.432 0.0438543
+-1.85 0.239757
+-6.35 -0.101669
+-5.19 -0.0136571
+0.715 0.43437
+-5.931 -0.0698786
+-2.084 0.222003
+-3.85 0.0880121
+-1.716 0.249924
+-4.45 0.0424886
+0.651 0.429514
+-4.37 0.0485584
+-2.4 0.198027
+-3.59 0.107739
+-4.71 0.0227618
+-4.21 0.060698
+-4.883 0.00963581
+-4.2 0.0614568
+-1.19 0.289833
+-0.96 0.307284
+-1.64 0.25569
+-2.55 0.186646
+-2.81 0.16692
+-8.699 -0.279894
+-8.23 -0.24431
+-8.04 -0.229894
+-7.8 -0.211684
+-8 -0.226859
+-8.49 -0.264036
+-9.018 -0.304097
+-2.616 0.181639
+-2.85 0.163885
+-3.12 0.143399
+-1.5 0.266313
+-0.78 0.320941
+-1.16 0.292109
+-2.39 0.198786
+-2.51 0.189681
+-0.95 0.308042
+-4.71 0.0227618
+-4.62 0.0295903
+-5.4 -0.0295903
+-2.32 0.204097
+-2.523 0.188695
+-4.445 0.042868
+-2.55 0.186646
+-0.89 0.312595
+-1.54 0.263278
+-1.09 0.29742
+-0.79 0.320182
+-4.93 0.0060698
+-3.33 0.127466
+-3.127 0.142868
+-4.16 0.0644917
+-2.39 0.198786
+-4.24 0.0584219
+-4.19 0.0622155
+-2.647 0.179287
+-3.082 0.146282
+-2.57 0.185129
+-2.18 0.214719
+-1.661 0.254097
+-1.877 0.237709
+-3.9 0.0842185
+-1.37 0.276176
+-3.68 0.10091
+-4.06 0.0720789
+-0.01 0.379363
+-1.96 0.231411
+-1.3 0.281487
+-5.4 -0.0295903
+-3.15 0.141123
+-3.224 0.135508
+-5.27 -0.0197269
+-1.83 0.241275
+-2.8 0.167678
+-5.736 -0.0550835
+-2.68 0.176783
+-2.08 0.222307
+-2.06 0.223824
+-1.84 0.240516
+-2.111 0.219954
+-4.411 0.0454476
+-3.924 0.0823976
+-2.617 0.181563
+-6.86 -0.140364
+-2.86 0.163126
+-4.576 0.0329287
+-0.02 0.378604
+-0.092 0.373141
+-2.38 0.199545
+-1.9 0.235964
+-1.06 0.299697
+-1.75 0.247344
+-3.38 0.123672
+-4.53 0.0364188
+-5.64 -0.0477997
+-3.05 0.14871
+-3.46 0.117602
+-4.89 0.0091047
+-5.67 -0.0500759
+-5.43 -0.0318665
+-3.451 0.118285
+-3.483 0.115857
+-7.85 -0.215478
+-8.057 -0.231184
+-1.3 0.281487
+-4.3 0.0538695
+-2.54 0.187405
+-2.06 0.223824
+-2.338 0.202731
+-3.499 0.114643
+-9.332 -0.327921
+-3.11 0.144158
+-4.21 0.060698
+-5.839 -0.0628983
+-5.382 -0.0282246
+-2.84 0.164643
+-3.15 0.141123
+-3.4 0.122155
+-2.17 0.215478
+-1.655 0.254552
+-0.88 0.313354
+-3.18 0.138847
+-3.168 0.139757
+-3.1 0.144917
+-0.44 0.346737
+-0.6 0.334598
+-2.59 0.183612
+-1.13 0.294385
+-3.06 0.147951
+-1.29 0.282246
+-2.982 0.153869
+-2.64 0.179818
+-2.1 0.220789
+-2.349 0.201897
+-1.886 0.237026
+-2.218 0.211836
+-7.337 -0.176555
+-8.176 -0.240212
+-1.155 0.292489
+-5.507 -0.0377086
+-3.094 0.145372
+-7.2 -0.166161
+-6.9 -0.143399
+-7.15 -0.162367
+-5.19 -0.0136571
+-5.14 -0.00986343
+-8.402 -0.25736
+-4.63 0.0288316
+-4.632 0.0286798
+-3.59 0.107739
+-4.9 0.00834598
+-1.85 0.239757
+-6.96 -0.147951
+-6.34 -0.10091
+-6.34 -0.10091
+-4.286 0.0549317
+-3.64 0.103945
+-4.6 0.0311077
+-4.38 0.0477997
+-1.17 0.291351
+-1.85 0.239757
+-3.896 0.084522
+-4.4 0.0462822
+-4.31 0.0531108
+-0.63 0.332322
+-5.666 -0.0497724
+-6.29 -0.0971168
+-4.95 0.00455235
+-7.278 -0.172079
+-0.09 0.373293
+-2.35 0.201821
+-1.34 0.278452
+-2.42 0.19651
+-4.07 0.0713202
+-6.02 -0.0766313
+-5.293 -0.0214719
+-4.081 0.0704856
+-6.144 -0.0860395
+-2.34 0.20258
+-6.637 -0.123445
+-1.1 0.296662
+-2.24 0.210167
+0.523 0.419803
+-0.85 0.31563
+-2.24 0.210167
+0.48 0.41654
+-1.66 0.254173
+-0.45 0.345979
+-1.44 0.270865
+-5.47 -0.0349014
+-3.38 0.123672
+0.35 0.406677
+-5.115 -0.00796662
+-7.32 -0.175266
+-1.57 0.261002
+-2.98 0.154021
+-3.96 0.0796662
+-3.504 0.114264
+-4.08 0.0705615
+-1.62 0.257208
+-4.86 0.0113809
+-3.35 0.125948
+-3.8 0.0918058
+-4.26 0.0569044
+-1.456 0.269651
+-2.17 0.215478
+-0.17 0.367223
+-8.172 -0.239909
+-6.18 -0.0887709
+-4.16 0.0644917
+-5.24 -0.0174507
+-5.282 -0.0206373
+-3.62 0.105463
+0.7 0.433232
+-5.03 -0.00151745
+-2.92 0.158574
+-4.955 0.00417299
+-3.955 0.0800455
+-6.124 -0.084522
+-0.6 0.334598
+1.1 0.463581
+-4.3 0.0538695
+-2.09 0.221548
+-5.54 -0.0402124
+-3.028 0.150379
+-5.66 -0.0493171
+-3.42 0.120637
+-3.42 0.120637
+-0.04 0.377086
+-2.32 0.204097
+-1.28 0.283005
+-3 0.152504
+-4.1 0.069044
+0.15 0.391502
+-2.74 0.172231
+-2.35 0.201821
+-3.8 0.0918058
+-1.75 0.247344
+-0.66 0.330046
+-0.66 0.330046
+-0.85 0.31563
+-2.77 0.169954
+-4.25 0.0576631
+-0.4 0.349772
+-2.1 0.220789
+-2.35 0.201821
+-8.6 -0.272382
+-4.735 0.0208649
+-3.571 0.109181
+-1.64 0.25569
+-1.56 0.26176
+-4.38 0.0477997
+-3.3 0.129742
+-4.04 0.0735964
+-3.927 0.08217
+-6.025 -0.0770106
+-2.3 0.205615
+-4.57 0.0333839
+-1.6 0.258725
+-1.8 0.243551
+-6.876 -0.141578
+-0.972 0.306373
+-3.43 0.119879
+-5.613 -0.0457511
+-3.43 0.119879
+-6 -0.0751138
+-5 0.000758725
+-1.8 0.243551
+-4.099 0.0691199
+-3.32 0.128225
+-4.445 0.042868
+-4.047 0.0730653
+-3.37 0.124431
+-2.34 0.20258
+-1.995 0.228756
+0.64 0.42868
+-0.82 0.317906
+-0.1 0.372534
+-2.943 0.156829
+-4.571 0.033308
+0.74 0.436267
+-2.337 0.202807
+-0.6 0.334598
+-3.246 0.133839
+-1.96 0.231411
+-3.583 0.10827
+-1.71 0.250379
+-2.7 0.175266
+-6.317 -0.0991654
+-4.53 0.0364188
+-4.92 0.00682853
+-8.334 -0.2522
+-8.4 -0.257208
+-5.23 -0.016692
+-3.84 0.0887709
+-4.43 0.0440061
+-5.21 -0.0151745
+-0.4 0.349772
+-2.92 0.158574
+-1.93 0.233687
+-3.09 0.145675
+-4.88 0.00986343
+-5.46 -0.0341426
+-3.817 0.0905159
+-2.296 0.205918
+-3.04 0.149469
+-3.586 0.108042
+-2.16 0.216237
+-1.52 0.264795
+-1.23 0.286798
+-3.01 0.151745
+-1.6 0.258725
+-6.62 -0.122155
+-1 0.304249
+-3.61 0.106222
+-3.785 0.0929439
+-3.658 0.10258
+-1.21 0.288316
+-4.12 0.0675266
+-2.15 0.216995
+-2.461 0.193399
+-4.194 0.061912
+-3.401 0.122079
+0.009 0.380804
+-1.92 0.234446
+-1.52 0.264795
+-1.06 0.299697
+-6.49 -0.112291
+-0.55 0.338392
+-0.63 0.332322
+-3.27 0.132018
+-3.536 0.111836
+-1.45 0.270106
+-2.93 0.157815
+-3.27 0.132018
+-5.259 -0.0188923
+-0.244 0.361608
+0.39 0.409712
+-4.594 0.031563
+-1.99 0.229135
+-4.64 0.0280728
+-3.592 0.107587
+-3.604 0.106677
+-6.005 -0.0754932
+-3.37 0.124431
+0.358 0.407284
+0.06 0.384674
+-1.37 0.276176
+-3.21 0.136571
+-3.55 0.110774
+-2.77 0.169954
+-3.88 0.085736
+-2.518 0.189074
+-1.899 0.236039
+-4.873 0.0103945
+-3.24 0.134294
+-5.35 -0.0257967
+-3.03 0.150228
+-2.53 0.188164
+-2.35 0.201821
+-1.807 0.24302
+-3.18 0.138847
+-1.601 0.258649
+1.57 0.499241
+-2.925 0.158194
+-2.23 0.210926
+-2.82 0.166161
+-0.985 0.305387
+-5.19 -0.0136571
+-2.928 0.157967
+-3.664 0.102124
+-6.89 -0.14264
+-0.22 0.363429
+-1.85 0.239757
+-0.99 0.305008
+-0.82 0.317906
+-4.69 0.0242792
+0.58 0.424127
+-1.24 0.286039
+-1.87 0.23824
+1.34 0.481791
+-0.46 0.34522
+-3.38 0.123672
+-3.17 0.139605
+-1.36 0.276935
+-0.14 0.369499
+-0.39 0.350531
+-0.24 0.361912
+-3.85 0.0880121
+-3.3 0.129742
+-1.827 0.241502
+-5.284 -0.0207891
+-2.436 0.195296
+-2.73 0.172989
+-3.78 0.0933232
+-1.803 0.243323
+-2.564 0.185584
+-1.26 0.284522
+-2.253 0.209181
+-2.67 0.177542
+-1.989 0.229211
+-6.8 -0.135812
+-0.85 0.31563
+-2.19 0.213961
+-1.01 0.30349
+-2.44 0.194992
+-2.57 0.185129
+-0.742 0.323824
+-3.083 0.146206
+-2.82 0.166161
+-3.03 0.150228
+1.11 0.46434
+-1.92 0.234446
+-2.28 0.207132
+-3.57 0.109256
+-8.6 -0.272382
+-3.6 0.10698
+-2.46 0.193475
+-1.7 0.251138
+-3.19 0.138088
+-4.7 0.0235205
+0.61 0.426404
+-4.76 0.0189681
+-2.19 0.213961
+-3.796 0.0921093
+-3.22 0.135812
+-3.76 0.0948407
+-3.796 0.0921093
+-1.8 0.243551
+-0.22 0.363429
+-5.46 -0.0341426
+-3.38 0.123672
+-2.22 0.211684
+0.26 0.399848
+-1.28 0.283005
+-3.931 0.0818665
+-3.171 0.13953
+-4.8 0.0159332
+-4.57 0.0333839
+-4.046 0.0731411
+-6.51 -0.113809
+-0.72 0.325493
+-1.52 0.264795
+-3.19 0.138088
+-2.55 0.186646
+-5.24 -0.0174507
+0.85 0.444613
+-2.7 0.175266
+-1.82 0.242033
+-1.96 0.231411
+-1.96 0.231411
+-1.96 0.231411
+-1.74 0.248103
+-5.16 -0.0113809
+-4.314 0.0528073
+-2.21 0.212443
+-5.696 -0.0520486
+0.106 0.388164
+-3.952 0.0802731
+-2.281 0.207056
+-2.8 0.167678
+-3.73 0.0971168
+-7.2 -0.166161
+-6.9 -0.143399
+-0.8 0.319423
+-0.4 0.349772
+-4.66 0.0265554
+-2.7 0.175266
+-3.083 0.146206
+-4.56 0.0341426
+-2.843 0.164416
+-3.63 0.104704
+-4.03 0.0743551
+-2.92 0.158574
+-0.73 0.324734
+-3.53 0.112291
+-5.915 -0.0686646
+-5.65 -0.0485584
+-2.6 0.182853
+-4.28 0.0553869
+-3.18 0.138847
+-2.39 0.198786
+-1.89 0.236722
+-2.25 0.209408
+-4.64 0.0280728
+-6.08 -0.0811836
+-3.8 0.0918058
+-6.291 -0.0971927
+-8.804 -0.28786
+-2.35 0.201821
+-5.26 -0.0189681
+-2.78 0.169196
+-2.33 0.203338
+-4.805 0.0155539
+-2.322 0.203945
+0 0.380121
+-2.9 0.160091
+-5.24 -0.0174507
+0.07 0.385432
+-0.4 0.349772
+-1.77 0.245827
+-4.097 0.0692716
+-4.11 0.0682853
+-5.233 -0.0169196
+-4.862 0.0112291
+-2.932 0.157663
+-2.61 0.182094
+-1.03 0.301973
+-0.96 0.307284
+-7.87 -0.216995
+-3.46 0.117602
+-1.63 0.256449
+-4.15 0.0652504
+-1.95 0.23217
+-4.16 0.0644917
+-1.49 0.267071
+-2.37 0.200303
+-2.41 0.197269
+-0.74 0.323976
+-2.49 0.191199
+-3.48 0.116085
+-4.12 0.0675266
+-3.18 0.138847
+-4.37 0.0485584
+-4.65 0.0273141
+-2.21 0.212443
+-4.8 0.0159332
+-4.42 0.0447648
+-2.478 0.192109
+-4.1 0.069044
+-2.48 0.191958
+-1.94 0.232929
+-3 0.152504
+-4.43 0.0440061
+-3.493 0.115099
+0.58 0.424127
+0.28 0.401366
+-2.05 0.224583
+-0.72 0.325493
+-1.92 0.234446
+-0.49 0.342944
+-1.34 0.278452
+-3.37 0.124431
+-1.08 0.298179
+-1.34 0.278452
+-0.41 0.349014
+-2.41 0.197269
+0.02 0.381639
+-7.11 -0.159332
+-1.74 0.248103
+-2.77 0.169954
+-2.56 0.185888
+-2.878 0.16176
+-6.176 -0.0884674
+1.1 0.463581
+0.76 0.437785
+1.1 0.463581
+-2.09 0.221548
+-3.29 0.130501
+-1.3 0.281487
+-5.03 -0.00151745
+-0.41 0.349014
+-2.696 0.175569
+-2.62 0.181335
+-1.77 0.245827
+-3.685 0.100531
+-2.452 0.194082
+-5.72 -0.0538695
+-4.42 0.0447648
+-4.376 0.0481032
+-3.928 0.0820941
+-4.114 0.0679818
+-4.207 0.0609256
+-4.554 0.0345979
+-4.634 0.0285281
+-4.706 0.0230653
+-4.749 0.0198027
+-2.86 0.163126
+-4.799 0.0160091
+-5.153 -0.0108498
+-5.36 -0.0265554
+-3.043 0.149241
+-3.324 0.127921
+-3.36 0.12519
+-3.535 0.111912
+-3.68 0.10091
+-0.85 0.31563
+-1.836 0.240819
+-3.09 0.145675
+-2.356 0.201366
+-4.11 0.0682853
+-4.55 0.0349014
+-2.676 0.177086
+1.09 0.462822
+-1.981 0.229818
+-4.173 0.0635053
+-3.84 0.0887709
+-4.522 0.0370258
+-2.82 0.166161
+-1.6 0.258725
+0.3 0.402883
+0.79 0.440061
+-1.99 0.229135
+-3.39 0.122914
+-1.34 0.278452
+-2.016 0.227162
+0.32 0.404401
+-7.28 -0.172231
+-2.484 0.191654
+-4.755 0.0193475
+-3.239 0.13437
+-4 0.0766313
+-4.02 0.0751138
+-5.184 -0.0132018
+-5.37 -0.0273141
+-2.54 0.187405
+-4.02 0.0751138
+-2.31 0.204856
+-7.96 -0.223824
+-7.321 -0.175341
+0.49 0.417299
+-0.03 0.377845
+0.94 0.451442
+-2.676 0.177086
+-1.39 0.274659
+-2.154 0.216692
+-3.46 0.117602
+-2.39 0.198786
+-1.62 0.257208
+-3.091 0.145599
+-3.36 0.12519
+-1.33 0.279211
+-2.12 0.219272
+0.32 0.404401
+-3.9 0.0842185
+-1.506 0.265857
+-2.22 0.211684
+-2.21 0.212443
+-4.15 0.0652504
+-4.47 0.0409712
+-3.82 0.0902883
+-2.54 0.187405
+-4.88 0.00986343
+-3.68 0.10091
+-4.31 0.0531108
+-4.13 0.0667678
+-2.404 0.197724
+-4.09 0.0698027
+-1.91 0.235205
+-2.68 0.176783
+-0.22 0.363429
+-2.168 0.21563
+-1.96 0.231411
+-1.17 0.291351
+-5.752 -0.0562974
+-4.46 0.0417299
+-6.01 -0.0758725
+-2.07 0.223065
+-4.06 0.0720789
+0.43 0.412747
+-4.19 0.0622155
+-3.638 0.104097
+-6.726 -0.130197
+-1.95 0.23217
+-1.488 0.267223
+0.96 0.452959
+-3.93 0.0819423
+-0.85 0.31563
+1.144 0.46692
+-3.893 0.0847496
+-3.79 0.0925645
+-2.581 0.184294
+new_mean=0.1494 new_std=0.159959
+min=-11.6 max=1.58
+noLogP=0
+calcuating mean and std 
+...................................................................................................................
+-2.18 0.214719
+-4.63 0.0288316
+-3.5 0.114568
+-5.6 -0.0447648
+-2 0.228376
+-3.39 0.122914
+-4.43 0.0440061
+-2 0.228376
+-4.17 0.0637329
+-4.81 0.0151745
+-3.54 0.111533
+-0.6 0.334598
+-8.6 -0.272382
+-8.56 -0.269347
+-1.52 0.264795
+-3.1 0.144917
+-1.3 0.281487
+-2.34 0.20258
+-2.82 0.166161
+-5.17 -0.0121396
+-4.54 0.0356601
+-2.11 0.22003
+-1.947 0.232398
+-1.08 0.298179
+-1.11 0.295903
+-2.74 0.172231
+-0.5 0.342185
+-1.4 0.2739
+-6.301 -0.0979514
+-0.67 0.329287
+-1.98 0.229894
+-0.7 0.327011
+-0.74 0.323976
+-1.742 0.247951
+-1.077 0.298407
+-7.02 -0.152504
+0.54 0.421093
+-2.12 0.219272
+-3.364 0.124886
+-2.596 0.183156
+-3.538 0.111684
+-5.53 -0.0394537
+-6.68 -0.126707
+-1 0.304249
+-4.345 0.0504552
+-6.09 -0.0819423
+0.47 0.415781
+-0.876 0.313657
+-3.14 0.141882
+-5.64 -0.0477997
+-2 0.228376
+-2.831 0.165326
+-3.24 0.134294
+-3.51 0.113809
+-4.15 0.0652504
+-8.017 -0.228149
+-3.45 0.118361
+-3.754 0.0952959
+-3.953 0.0801973
+-4.16 0.0644917
+-4.328 0.0517451
+-2.58 0.18437
+-4.23 0.0591806
+-5.41 -0.030349
+-1.36 0.276935
+-3.81 0.091047
+-3.39 0.122914
+0.29 0.402124
+-4.7 0.0235205
+-6.78 -0.134294
+-8.003 -0.227086
+1.12 0.465099
+-3.67 0.101669
+-2.63 0.180577
+-1.04 0.301214
+-1.01 0.30349
+-2.863 0.162898
+-3.021 0.15091
+-0.82 0.317906
+-5.27 -0.0197269
+-0.9 0.311836
+0.46 0.415023
+-4.69 0.0242792
+-3.35 0.125948
+-1.22 0.287557
+-2.89 0.16085
+-4.77 0.0182094
+-3.561 0.109939
+-5.88 -0.0660091
+-3.54 0.111533
+-2.33 0.203338
+-2.7 0.175266
+-1.66 0.254173
+-4 0.0766313
+-1.78 0.245068
+-3.81 0.091047
+-2.38 0.199545
+-1.21 0.288316
+-2.64 0.179818
+-3.408 0.121548
+-4.74 0.0204856
+-0.667 0.329514
+-5.82 -0.0614568
+-3.672 0.101517
+-4.871 0.0105463
+-3.59 0.107739
+-4.743 0.020258
+-3.66 0.102428
+-3.14 0.141882
+-2.523 0.188695
+-2.273 0.207663
+-3.61 0.106222
+-2.68 0.176783
+-5.68 -0.0508346
+-4.925 0.00644917
+new_mean=0.136505 new_std=0.149622
+min=-11.6 max=1.58
+noLogP=0
+Epoch:0
+RMSE and AAE at epoch 0 2.07229 1.65102
+PEARSON 0.0413889
+epsilon:0.01
+Validation RMSE and AAE at epoch 0 1.75603 1.39739
+Validation PEARSON 0.311841
+epoch CPU_time_usage = 790
+Epoch:1
+RMSE and AAE at epoch 1 1.83445 1.43077
+PEARSON 0.282454
+epsilon:0.00964
+Validation RMSE and AAE at epoch 1 1.54947 1.23989
+Validation PEARSON 0.466182
+epoch CPU_time_usage = 780
+Epoch:2
+RMSE and AAE at epoch 2 1.61558 1.26372
+PEARSON 0.452768
+epsilon:0.00928
+Validation RMSE and AAE at epoch 2 1.38763 1.10682
+Validation PEARSON 0.569915
+epoch CPU_time_usage = 790
+Epoch:3
+RMSE and AAE at epoch 3 1.44589 1.15338
+PEARSON 0.536295
+epsilon:0.00892
+Validation RMSE and AAE at epoch 3 1.23966 1.00039
+Validation PEARSON 0.622586
+epoch CPU_time_usage = 790
+Epoch:4
+RMSE and AAE at epoch 4 1.44366 1.15757
+PEARSON 0.531443
+epsilon:0.00856
+Validation RMSE and AAE at epoch 4 1.27935 1.00953
+Validation PEARSON 0.65338
+epoch CPU_time_usage = 800
+Epoch:5
+RMSE and AAE at epoch 5 1.34256 1.06716
+PEARSON 0.596122
+epsilon:0.0082
+Validation RMSE and AAE at epoch 5 1.15666 0.942137
+Validation PEARSON 0.666227
+epoch CPU_time_usage = 800
+Epoch:6
+RMSE and AAE at epoch 6 1.26096 1.00995
+PEARSON 0.642346
+epsilon:0.00784
+Validation RMSE and AAE at epoch 6 1.13705 0.90325
+Validation PEARSON 0.680096
+epoch CPU_time_usage = 790
+Epoch:7
+RMSE and AAE at epoch 7 1.24622 0.982052
+PEARSON 0.650619
+epsilon:0.00748
+Validation RMSE and AAE at epoch 7 1.14425 0.950489
+Validation PEARSON 0.681925
+epoch CPU_time_usage = 790
+Epoch:8
+RMSE and AAE at epoch 8 1.24903 0.997719
+PEARSON 0.649044
+epsilon:0.00712
+Validation RMSE and AAE at epoch 8 1.0923 0.871861
+Validation PEARSON 0.696546
+epoch CPU_time_usage = 790
+Epoch:9
+RMSE and AAE at epoch 9 1.20218 0.958816
+PEARSON 0.674847
+epsilon:0.00676
+Validation RMSE and AAE at epoch 9 1.09569 0.903919
+Validation PEARSON 0.701018
+Writing logTPVal
+-3.82593	-2.18
+-4.40069	-4.63
+-2.78721	-3.5
+-3.32695	-5.6
+-2.28896	-2
+-1.69486	-3.39
+-3.07071	-4.43
+-2.41691	-2
+-3.21196	-4.17
+-3.11543	-4.81
+-2.66763	-3.54
+-1.87543	-0.6
+-6.25088	-8.6
+-6.27961	-8.56
+-2.25565	-1.52
+-4.21526	-3.1
+-3.06269	-1.3
+-3.66952	-2.34
+-1.97748	-2.82
+-3.67579	-5.17
+-3.40726	-4.54
+-2.64988	-2.11
+-2.42935	-1.947
+-2.27682	-1.08
+-2.11126	-1.11
+-2.92818	-2.74
+-1.975	-0.5
+-2.19601	-1.4
+-4.5933	-6.301
+-2.14843	-0.67
+-2.65195	-1.98
+-2.34807	-0.7
+-2.1414	-0.74
+-1.80109	-1.742
+-1.94606	-1.077
+-5.22858	-7.02
+-2.36909	0.54
+-2.32668	-2.12
+-3.34193	-3.364
+-3.3134	-2.596
+-4.43759	-3.538
+-4.16497	-5.53
+-4.38993	-6.68
+-2.10863	-1
+-2.69073	-4.345
+-4.62514	-6.09
+-1.59639	0.47
+-2.55764	-0.876
+-3.12518	-3.14
+-5.70703	-5.64
+-2.91515	-2
+-2.99047	-2.831
+-4.72152	-3.24
+-1.54389	-3.51
+-1.37024	-4.15
+-5.8043	-8.017
+-4.88493	-3.45
+-3.9401	-3.754
+-4.2434	-3.953
+-3.50814	-4.16
+-4.49714	-4.328
+-2.60731	-2.58
+-4.04122	-4.23
+-4.98408	-5.41
+-1.28276	-1.36
+-2.70457	-3.81
+-3.11078	-3.39
+-1.18501	0.29
+-3.56972	-4.7
+-5.26216	-6.78
+-6.39937	-8.003
+-1.04603	1.12
+-4.97188	-3.67
+-3.31885	-2.63
+-2.14887	-1.04
+-1.76566	-1.01
+-2.89358	-2.863
+-3.57603	-3.021
+-2.07539	-0.82
+-5.47285	-5.27
+-1.15701	-0.9
+-1.26209	0.46
+-3.88222	-4.69
+-3.75909	-3.35
+-1.7717	-1.22
+-3.16846	-2.89
+-4.6246	-4.77
+-3.58321	-3.561
+-3.1055	-5.88
+-2.9837	-3.54
+-1.99527	-2.33
+-2.82931	-2.7
+-2.4862	-1.66
+-2.94938	-4
+-2.46213	-1.78
+-3.76171	-3.81
+-2.56212	-2.38
+-2.05144	-1.21
+-2.88947	-2.64
+-3.79325	-3.408
+-2.08112	-4.74
+-1.79776	-0.667
+-4.83006	-5.82
+-3.19408	-3.672
+-4.29694	-4.871
+-2.86651	-3.59
+-4.49668	-4.743
+-2.61544	-3.66
+-2.93448	-3.14
+-2.46941	-2.523
+-2.09054	-2.273
+-4.07185	-3.61
+-4.82681	-2.68
+-4.16791	-5.68
+-4.05708	-4.925
+epoch CPU_time_usage = 1560
+UGRNN DESTRUCTOR
