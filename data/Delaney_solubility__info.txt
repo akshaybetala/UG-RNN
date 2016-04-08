@@ -1,0 +1,3 @@
+Huuskonen Aequeous Solubility Dataset  
+
+Jarmo Huuskonen, J. Chem. Inf. Comput. Sci., 2000, 40, 773-777.  
