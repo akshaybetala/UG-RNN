@@ -79,8 +79,6 @@ def read_data_sets(contextual_vector_size):
   
   TRAIN_SIZE = int(math.floor(0.7*size))
   VALIDATION_SIZE = int(math.floor(0.1*size))
-  print(TRAIN_SIZE)
-  print(len(molecules))
   train_molecules = molecules[:TRAIN_SIZE]
   train_labels = prediction_targets[:TRAIN_SIZE]
 
@@ -97,5 +95,7 @@ def read_data_sets(contextual_vector_size):
   return data_sets
 
 data_sets = read_data_sets(10)
-molecules,labels = data_sets.train.next_batch(2)
-print(molecules[0].contextual_vector)
+molecules,labels = data_sets.train.next_batch(1)
+
+print((molecules[0].get_bond_type(0,1)) )
+
