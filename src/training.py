@@ -9,8 +9,9 @@ import time
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
-from tensorflow.examples.tutorials.mnist import input_data
-from tensorflow.examples.tutorials.mnist import mnist
+import input_data
+import ugrnn
+import utils
 
 
 # Basic model parameters as external flags.
@@ -18,14 +19,14 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('max_steps', 2000, 'Number of steps to run trainer.')
-flags.DEFINE_integer('hidden1', 128, 'Number of units in hidden layer 1.')
-flags.DEFINE_integer('hidden2', 32, 'Number of units in hidden layer 2.')
-flags.DEFINE_integer('batch_size', 100, 'Batch size.  '
-                     'Must divide evenly into the dataset sizes.')
+flags.DEFINE_integer('batch_size',1, 'Number of steps to run trainer.')
+flags.DEFINE_integer('rnn_hidden_size',7, 'Number of units in hidden layer of rnn.')
+flags.DEFINE_integer('rnn_output_size', 3, 'Size of the state in rnn.')
+flags.DEFINE_integer('nn_hidden_size', 5, 'Number of units in hidden layer of fully connected nn.')
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
-flags.DEFINE_boolean('fake_data', False, 'If true, uses fake data '
-                     'for unit testing.')
-
+flags.DEFINE_integer('initial_feature_vector_size',utils.num_of_features(),'Size of the individual feature for all the nodes' )
+flags.DEFINE_integer('contextual_vector_size',FLAGS.rnn_output_size,'Size of the learned features for all nodes')
+flags.DEFINE_integer('maximum_sequence_length'100,'Size of the maximum molecule')
 
 def placeholder_inputs():
   """Generate placeholder variables to represent the input tensors.
@@ -38,18 +39,27 @@ def placeholder_inputs():
 
   Returns:
     molecule_placeholder: Images placeholder.
-    labels_placeholder: Labels placeholder.
+    targets_placeholder: targets placeholder.
   """
   # Note that the shapes of the placeholders match the shapes of the full
-  # image and label tensors, except the first dimension is now batch_size
+  # image and target tensors, except the first dimension is now batch_size
   # rather than the full size of the train or test data sets.
-  molecule_placeholder = tf.placeholder(tf.float32, shape=(batch_size,
-                                                         mnist.IMAGE_PIXELS))
-  labels_placeholder = tf.placeholder(tf.int32, shape=(batch_size))
-  return images_placeholder, labels_placeholder
 
 
-def fill_feed_dict(data_set, images_pl, labels_pl):
+  feature_placeholder = tf.placeholder(tf.int32, shape=(None,None,FLAGS.initial_feature_vector_size))
+  path_placeholder = tf.placeholder(tf.int32, shape=(None,None,2))
+  targets_placeholder = tf.placeholder(tf.int32, shape=(1))
+  sequence_length_placeholder = tf.placeholder(tf.int32, shape=(1))
+  contextual_vector_placeholder = tf.placeholder(tf.int32, shape=(None,None,FLAGS.contextual_vector_size))
+  return feature_placeholder,path_placeholder, targets_placeholder, sequence_length_placeholder,contextual_vector_placeholder
+
+
+def fill_feed_dict(data_set, 
+                  feature_placeholder, 
+                  path_placeholder, 
+                  targets_placeholder, 
+                  sequence_length_placeholder,
+                  contextual_vector_placeholder):
   """Fills the feed_dict for training the given step.
 
   A feed_dict takes the form of:
@@ -59,28 +69,45 @@ def fill_feed_dict(data_set, images_pl, labels_pl):
   }
 
   Args:
-    data_set: The set of images and labels, from input_data.read_data_sets()
+    data_set: The set of images and targets, from input_data.read_data_sets()
     images_pl: The images placeholder, from placeholder_inputs().
-    labels_pl: The labels placeholder, from placeholder_inputs().
+    targets_pl: The targets placeholder, from placeholder_inputs().
 
   Returns:
     feed_dict: The feed dictionary mapping from placeholders to values.
   """
   # Create the feed_dict for the placeholders filled with the next
   # `batch size ` examples.
-  images_feed, labels_feed = data_set.next_batch(FLAGS.batch_size,
-                                                 FLAGS.fake_data)
-  feed_dict = {
-      images_pl: images_feed,
-      labels_pl: labels_feed,
-  }
+  molecules_feed, targets_feed = data_set.next_batch(1)
+  sequence_length = molecules_feed[0].feature_vector.shape()[0]
+
+  feed_dict = {k: v for k, v in zip(feature_placeholder, molecules_feed[0].feature_vector)}
+
+  feed_dict[path_placeholder] = molecules_feed[0].directed_paths
+  feed_dict[targets_placeholder]= targets_feed[0],
+  feed_dict[sequence_length_placeholder]=sequence_length,
+  feed_dict[contextual_vector_placeholder]=tf.zeros([sequence_length,sequence_length,FLAGS.contextual_vector_size])
+
+
+  # feed_dict = {
+  #     feature_placeholder: molecules_feed[0].feature_vector,
+  #     path_placeholder: molecules_feed[0].directed_paths,
+  #     targets_placeholder: targets_feed[0],
+  #     sequence_length_placeholder:sequence_length,
+  #     contextual_vector_placeholder:tf.zeros([sequence_length,sequence_length,FLAGS.contextual_vector_size])
+  # }
+
+  print(feed_dict)
   return feed_dict
 
 
 def do_eval(sess,
             eval_correct,
-            images_placeholder,
-            labels_placeholder,
+            feature_placeholder, 
+            path_placeholder,
+            targets_placeholder,
+            sequence_length_placeholder,
+            contextual_vector_placeholder,
             data_set):
   """Runs one evaluation against the full epoch of data.
 
@@ -88,8 +115,8 @@ def do_eval(sess,
     sess: The session in which the model has been trained.
     eval_correct: The Tensor that returns the number of correct predictions.
     images_placeholder: The images placeholder.
-    labels_placeholder: The labels placeholder.
-    data_set: The set of images and labels to evaluate, from
+    targets_placeholder: The targets placeholder.
+    data_set: The set of images and targets to evaluate, from
       input_data.read_data_sets().
   """
   # And run one epoch of eval.
@@ -98,8 +125,11 @@ def do_eval(sess,
   num_examples = steps_per_epoch * FLAGS.batch_size
   for step in xrange(steps_per_epoch):
     feed_dict = fill_feed_dict(data_set,
-                               images_placeholder,
-                               labels_placeholder)
+                               feature_placeholder, 
+                               path_placeholder,
+                               targets_placeholder,
+                               sequence_length_placeholder,
+                               contextual_vector_placeholder)
     true_count += sess.run(eval_correct, feed_dict=feed_dict)
   precision = true_count / num_examples
   print('  Num examples: %d  Num correct: %d  Precision @ 1: %0.04f' %
@@ -107,40 +137,45 @@ def do_eval(sess,
 
 
 def run_training():
-  """Train MNIST for a number of steps."""
-  # Get the sets of images and labels for training, validation, and
-  # test on MNIST.
-  data_sets = input_data.read_data_sets(FLAGS.train_dir, FLAGS.fake_data)
+  """Train ugrnn for a number of steps."""
+  # Get the sets of molecules and targets for training, validation, and
+  # test.
+  data_sets = input_data.read_data_sets()
 
   # Tell TensorFlow that the model will be built into the default Graph.
   with tf.Graph().as_default():
-    # Generate placeholders for the images and labels.
-    images_placeholder, labels_placeholder = placeholder_inputs(
-        FLAGS.batch_size)
+
+    # Create a session for running Ops on the Graph.
+    sess = tf.Session()
+
+    # Generate placeholders for the images and targets.
+    feature_placeholder,path_placeholder, targets_placeholder,sequence_length_placeholder,contextual_vector_placeholder = placeholder_inputs()
 
     # Build a Graph that computes predictions from the inference model.
-    logits = mnist.inference(images_placeholder,
-                             FLAGS.hidden1,
-                             FLAGS.hidden2)
+    logits = ugrnn.inference(FLAGS.rnn_hidden_size,
+                            FLAGS.rnn_output_size,
+                            FLAGS.nn_hidden_size,
+                            feature_placeholder,
+                            path_placeholder,
+                            sequence_length_placeholder,
+                            contextual_vector_placeholder
+                            )
 
     # Add to the Graph the Ops for loss calculation.
-    loss = mnist.loss(logits, labels_placeholder)
+    loss = ugrnn.loss(logits, targets_placeholder)
 
     # Add to the Graph the Ops that calculate and apply gradients.
-    train_op = mnist.training(loss, FLAGS.learning_rate)
+    train_op = ugrnn.training(loss, FLAGS.learning_rate)
 
-    # Add the Op to compare the logits to the labels during evaluation.
-    eval_correct = mnist.evaluation(logits, labels_placeholder)
+    # Add the Op to compare the logits to the targets during evaluation.
+    eval_correct = ugrnn.evaluation(logits, targets_placeholder)
 
     # Build the summary operation based on the TF collection of Summaries.
     summary_op = tf.merge_all_summaries()
 
     # Create a saver for writing training checkpoints.
     saver = tf.train.Saver()
-
-    # Create a session for running Ops on the Graph.
-    sess = tf.Session()
-
+    
     # Run the Op to initialize the variables.
     init = tf.initialize_all_variables()
     sess.run(init)
@@ -152,11 +187,15 @@ def run_training():
     for step in xrange(FLAGS.max_steps):
       start_time = time.time()
 
-      # Fill a feed dictionary with the actual set of images and labels
+      # Fill a feed dictionary with the actual set of images and targets
       # for this particular training step.
       feed_dict = fill_feed_dict(data_sets.train,
-                                 images_placeholder,
-                                 labels_placeholder)
+                                 feature_placeholder, 
+                                 path_placeholder,
+                                 targets_placeholder,
+                                 contextual_vector_placeholder)
+
+      
 
       # Run one step of the model.  The return values are the activations
       # from the `train_op` (which is discarded) and the `loss` Op.  To
@@ -184,22 +223,31 @@ def run_training():
         print('Training Data Eval:')
         do_eval(sess,
                 eval_correct,
-                images_placeholder,
-                labels_placeholder,
+                feature_placeholder, 
+                path_placeholder,
+                targets_placeholder,
+                sequence_length_placeholder,
+                contextual_vector_placeholder,
                 data_sets.train)
         # Evaluate against the validation set.
         print('Validation Data Eval:')
         do_eval(sess,
                 eval_correct,
-                images_placeholder,
-                labels_placeholder,
+                feature_placeholder, 
+                path_placeholder,
+                targets_placeholder,
+                sequence_length_placeholder,
+                contextual_vector_placeholder,
                 data_sets.validation)
         # Evaluate against the test set.
         print('Test Data Eval:')
         do_eval(sess,
                 eval_correct,
-                images_placeholder,
-                labels_placeholder,
+                feature_placeholder, 
+                path_placeholder,
+                targets_placeholder,
+                sequence_length_placeholder,
+                contextual_vector_placeholder,
                 data_sets.test)
 
 

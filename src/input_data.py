@@ -60,21 +60,21 @@ class DataSet(object):
     end = self._index_in_epoch
     return self._molecules[start:end], self._labels[start:end]
 
-def extract_molecules_from_smiles(SMILES,contextual_vector_size):
+def extract_molecules_from_smiles(SMILES):
     molecules = []
     size = len(SMILES)
     for i in xrange(size):
-      m = Molecule.Molecule(SMILES[i],contextual_vector_size)
+      m = Molecule.Molecule(SMILES[i])
       molecules.append(m)
     return molecules
 
-def read_data_sets(contextual_vector_size):
+def read_data_sets():
   class DataSets(object):
     pass
   data_sets = DataSets()
 
   SMILES, prediction_targets = parse_solubility_data.load_solubility_data(path = '../data/Delaney_solubility.txt')
-  molecules = extract_molecules_from_smiles(SMILES,contextual_vector_size)
+  molecules = extract_molecules_from_smiles(SMILES)
   size = len(SMILES)
   
   TRAIN_SIZE = int(math.floor(0.7*size))
@@ -93,9 +93,4 @@ def read_data_sets(contextual_vector_size):
   data_sets.test = DataSet(test_molecules, test_labels)
 
   return data_sets
-
-data_sets = read_data_sets(10)
-molecules,labels = data_sets.train.next_batch(1)
-
-print((molecules[0].get_bond_type(0,1)) )
 
