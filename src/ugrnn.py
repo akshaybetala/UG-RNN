@@ -20,24 +20,25 @@ apply gradients.
 
 """
 
+flags = tf.app.flags
+FLAGS = flags.FLAGS
+
 def inference(rnn_hidden_size,
 			rnn_output_size,
 			nn_hidden_size,
 			feature_placeholder,
 			path_placeholder,
-      contextual_vector_placeholder,
-      sequence_length_placeholder):
+      sequence_length_placeholder,
+      contextual_vector_placeholder
+      ):
   """Build the ugrnn model up to where it may be used for inference."""
-  # dims = tf.shape(feature_placeholder).eval()
-  # print(dims)
-  batch_size = tf.shape(feature_placeholder)[0]
-
-  rnn_input_size = tf.shape(feature_placeholder)[2] + rnn_output_size
+  rnn_input_size = FLAGS.contextual_vector_size+ rnn_output_size
   
   rnn_hidden_cell =  tf.nn.rnn_cell.BasicLSTMCell(rnn_hidden_size, forget_bias=0.0, input_size = rnn_input_size)
   rnn_output_cell =  tf.nn.rnn_cell.BasicLSTMCell(rnn_output_size, forget_bias=0.0, input_size =rnn_hidden_size)
   cell = tf.nn.rnn_cell.MultiRNNCell([rnn_hidden_cell,rnn_output_cell])
-  states = cell.zero_state(batch_size, tf.float32)
+  state_size = cell.state_size
+  states = tf.zeros([100,state_size], tf.float32)
 
   # for time, input_ in enumerate(inputs):
   #     if time > 0: vs.get_variable_scope().reuse_variables()
@@ -54,14 +55,16 @@ def inference(rnn_hidden_size,
 
 
   with tf.variable_scope("RNN"):
-      for time,x in enumerate(feature_placeholder):
-        if time > 0: tf.get_variable_scope().reuse_variables()
-        
-        t1 = contextual_vector[:,path_placeholder[:,time,0]] 
-        t2 = feature_placeholder[:, time, :]
+      for step in xrange(FLAGS.max_sequence_length):
+        if step > 0: tf.get_variable_scope().reuse_variables()
+
+        t1 = contextual_vector_placeholder[:,tf.squeeze(path_placeholder[step,:,0]),: ] 
+        t2 = tf.squeeze(feature_placeholder[step,:, :])
         cell_inputs = tf.concat(1, [t1, t2])
         (cell_output, output_state) = cell(cell_inputs,states)
-        contextual_vector[:,path_placeholder[:,time,1]] = cell_output
+
+        contextual_vector_placeholder[:,path_placeholder[:,step,1]] = cell_output
+      
       rnn_output = tf.reduce_sum(cell_output, 0)
 
   # Hidden 1

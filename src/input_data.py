@@ -63,7 +63,8 @@ class DataSet(object):
 def extract_molecules_from_smiles(SMILES):
     molecules = []
     size = len(SMILES)
-    for i in xrange(size):
+    # TODO: Change it back to batch_size
+    for i in xrange(2):
       m = Molecule.Molecule(SMILES[i])
       molecules.append(m)
     return molecules

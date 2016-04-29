@@ -26,7 +26,7 @@ flags.DEFINE_integer('nn_hidden_size', 5, 'Number of units in hidden layer of fu
 flags.DEFINE_string('train_dir', 'data', 'Directory to put the training data.')
 flags.DEFINE_integer('initial_feature_vector_size',utils.num_of_features(),'Size of the individual feature for all the nodes' )
 flags.DEFINE_integer('contextual_vector_size',FLAGS.rnn_output_size,'Size of the learned features for all nodes')
-flags.DEFINE_integer('maximum_sequence_length'100,'Size of the maximum molecule')
+flags.DEFINE_integer('maximum_sequence_length',100,'Size of the maximum molecule')
 
 def placeholder_inputs():
   """Generate placeholder variables to represent the input tensors.
@@ -45,11 +45,11 @@ def placeholder_inputs():
   # image and target tensors, except the first dimension is now batch_size
   # rather than the full size of the train or test data sets.
 
-
-  feature_placeholder = tf.placeholder(tf.int32, shape=(None,None,FLAGS.initial_feature_vector_size))
+  feature_placeholder =[tf.placeholder(tf.int32, shape=(None,FLAGS.initial_feature_vector_size)) for i in xrange(0,FLAGS.maximum_sequence_length)]
+  # feature_placeholder =tf.placeholder(tf.int32, shape=(None,None,FLAGS.initial_feature_vector_size)) 
   path_placeholder = tf.placeholder(tf.int32, shape=(None,None,2))
   targets_placeholder = tf.placeholder(tf.int32, shape=(1))
-  sequence_length_placeholder = tf.placeholder(tf.int32, shape=(1))
+  sequence_length_placeholder =  tf.placeholder(tf.int32)
   contextual_vector_placeholder = tf.placeholder(tf.int32, shape=(None,None,FLAGS.contextual_vector_size))
   return feature_placeholder,path_placeholder, targets_placeholder, sequence_length_placeholder,contextual_vector_placeholder
 
@@ -82,10 +82,9 @@ def fill_feed_dict(data_set,
   sequence_length = molecules_feed[0].feature_vector.shape()[0]
 
   feed_dict = {k: v for k, v in zip(feature_placeholder, molecules_feed[0].feature_vector)}
-
   feed_dict[path_placeholder] = molecules_feed[0].directed_paths
-  feed_dict[targets_placeholder]= targets_feed[0],
-  feed_dict[sequence_length_placeholder]=sequence_length,
+  feed_dict[targets_placeholder]= targets_feed[0]
+  feed_dict[sequence_length_placeholder]=sequence_length
   feed_dict[contextual_vector_placeholder]=tf.zeros([sequence_length,sequence_length,FLAGS.contextual_vector_size])
 
 
@@ -151,6 +150,10 @@ def run_training():
     # Generate placeholders for the images and targets.
     feature_placeholder,path_placeholder, targets_placeholder,sequence_length_placeholder,contextual_vector_placeholder = placeholder_inputs()
 
+    # Run the Op to initialize the variables.
+    init = tf.initialize_all_variables()
+    sess.run(init)
+
     # Build a Graph that computes predictions from the inference model.
     logits = ugrnn.inference(FLAGS.rnn_hidden_size,
                             FLAGS.rnn_output_size,
@@ -176,10 +179,6 @@ def run_training():
     # Create a saver for writing training checkpoints.
     saver = tf.train.Saver()
     
-    # Run the Op to initialize the variables.
-    init = tf.initialize_all_variables()
-    sess.run(init)
-
     # Instantiate a SummaryWriter to output summaries and the Graph.
     summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph)
 
@@ -193,15 +192,16 @@ def run_training():
                                  feature_placeholder, 
                                  path_placeholder,
                                  targets_placeholder,
+                                 sequence_length_placeholder,
                                  contextual_vector_placeholder)
 
       
-
       # Run one step of the model.  The return values are the activations
       # from the `train_op` (which is discarded) and the `loss` Op.  To
       # inspect the values of your Ops or variables, you may include them
       # in the list passed to sess.run() and the value tensors will be
       # returned in the tuple from the call.
+
       _, loss_value = sess.run([train_op, loss],
                                feed_dict=feed_dict)
 

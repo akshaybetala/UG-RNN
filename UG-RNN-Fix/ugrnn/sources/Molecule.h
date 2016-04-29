@@ -56,7 +56,7 @@ class Molecule {
 		int atoms;	/* number of atoms */
 		int bonds;	/* number of bonds */
 		
-		Graph* g;	/* the only thing we need, the molecule as a graph with varoius operations */
+		graph* g;	/* the only thing we need, the molecule as a graph with varoius operations */
 		Float target;
 		Float trueTarget;
 		Float logP;
