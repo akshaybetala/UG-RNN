@@ -1,0 +1,104 @@
+function [gm, lnZ] = wmbFwd(gm, updateThetas, updateWeights)
+% [gm, lnBound]=wmbFwd(gm [,options]) : compute forward messages for weighted mini-bucket elimination
+
+if (~strcmp(gm.Alg.name,'WMB'))
+  fprintf('Graphical model has not been specialized to the WMB algorithm\n');
+  return;
+end;
+
+lnZ = 0.0;
+if (nargin < 3) updateWeights=true; end;  % default settings
+if (nargin < 2) updateThetas=true;  end;
+
+for i=1:length(gm.Alg.minibucket),  % for each bucket (= collection of minibuckets)
+  X = gm.Alg.minibucket(i).var;     % variable to be eliminated
+  nodes = gm.Alg.minibucket(i).nodes; 
+  nNodes = length(gm.Alg.minibucket(i).nodes);  % # of minibucket partitions in bucket
+  bel = cell(1,nNodes);             % allocate storage for beliefs
+
+  if (length(gm.Alg.minibucket(i).nodes)>1) % if more than one mini-bucket partition:
+
+    if (updateThetas || updateWeights)                       % if match, compute beliefs
+      for j=1:nNodes,
+        n = gm.Alg.minibucket(i).nodes(j);                   % compute belief at node n:
+        bel{j}=gm.Alg.nodes(n).theta+gm.Alg.nodes(n).msgBwd; % theta+bwd+\sum fwd
+        for c=gm.Alg.nodes(n).children, bel{j}=bel{j}+gm.Alg.nodes(c).msgFwd; end;
+        bel{j}=bel{j}*(1.0/gm.Alg.nodes(n).wt);              % and power (TODO?)
+        bel{j}=bel{j} - logsumexp(bel{j});                   % and normalize
+      end;
+    end;
+
+%if (i==607), bel{:}, end;
+ 
+    if(updateThetas)
+      % Update theta (parameter allocation)
+      % (TODO): save factor marginals somewhere here...
+      for m=1:length(gm.Alg.minibucket(i).match), 
+        match = gm.Alg.minibucket(i).match{m};
+        wTot=0; 
+        for c=match, wTot=wTot+gm.Alg.nodes(c).wt; end;
+        vAll=gm.Alg.nodes( match(1) ).clique;
+        for c=match, vAll=vintersect(vAll,gm.Alg.nodes(c).clique); end;
+        delta=cell(1,nNodes); bavg=log(factor());
+        for c=match,
+          j = find( gm.Alg.minibucket(i).nodes == c );
+          delta{j} = logsumexp(bel{j}, vdiff(vars(bel{j}),vAll));  % get marginal over match vars
+          bavg = bavg + delta{j}*(gm.Alg.nodes(c).wt / wTot); % & weighted avg
+          %OR: compute actual average (for proj gradient)  (TODO)
+        end;
+%if (i==607), delta{:}, bavg, end;
+        damp = 1; % TODO
+        for c=match,
+          j = find( gm.Alg.minibucket(i).nodes == c );
+          delta{j} = (bavg - delta{j});                        % compute update & apply to
+%if (i==607), 1, bel{j}, pause; end;
+          bel{j} = bel{j} + delta{j}*damp;                     %   belief (TODO?)
+%if (i==607), 2, bel{j}, pause; end;
+          bel{j}=bel{j} - logsumexp(bel{j});                   %   and normalize (TODO?)
+%if (i==607), 3, bel{j}, pause; end;
+          gm.Alg.nodes(c).theta = gm.Alg.nodes(c).theta + delta{j}*gm.Alg.nodes(c).wt*damp; % and theta
+%if (i==607),  gm.Alg.nodes(c).theta, end;
+        end;
+%if (i==607), pause; end;
+      end; % (list of matches)
+    end;
+
+    if(updateWeights)
+      wwstep = 1;  % (TODO) step size for weights
+      Havg = 0; H=cell(1,nNodes); wTot=0;
+      for j=1:nNodes,
+        n = gm.Alg.minibucket(i).nodes(j);       % compute conditional entropy at node n:
+        H{j} = -sum( exp(bel{j}) .* (bel{j}-logsumexp(bel{j},X)) );
+        Havg = Havg + gm.Alg.nodes(n).wt*H{j};
+      end;
+
+      for j=1:nNodes,
+        n = gm.Alg.minibucket(i).nodes(j);       % take a step in the gradient direction 
+        gm.Alg.nodes(n).wt = gm.Alg.nodes(n).wt * exp(-wwstep*gm.Alg.nodes(n).wt*(H{j}-Havg));
+        wTot = wTot + gm.Alg.nodes(n).wt;
+      end;                                       % and compute the weights of the new point
+      for n=nodes, gm.Alg.nodes(n).wt = gm.Alg.nodes(n).wt / wTot; end;
+    end;
+
+  end;    % (if # nodes > 1)
+
+  for j=1:nNodes,
+    n = gm.Alg.minibucket(i).nodes(j);
+    if (1) % TODO: (isempty(bel{j})),         % if we haven't pre-computed the belief,
+      bel{j}=gm.Alg.nodes(n).theta;           %   compute it now (not including back msg)
+      for c=gm.Alg.nodes(n).children, bel{j}=bel{j}+gm.Alg.nodes(c).msgFwd; end;
+    else                                      % if we have, then just remove the back msg
+      bel{j}=bel{j} - gm.Alg.nodes(n).msgBwd;
+    end;                                      % and then eliminate X 
+%if (n==481 || n==483 || n==1252 || n==1253 || n==859 || n==1115),
+% fprintf('=====\n'); n, bel{j}, logsumexpPower(bel{j},X, 1.0/gm.Alg.nodes(n).wt), 
+%end;
+    gm.Alg.nodes(n).msgFwd = logsumexpPower(bel{j},X, 1.0/gm.Alg.nodes(n).wt);
+    bel{j}=log(factor());
+    if (gm.Alg.nodes(n).parent == 0),         % add roots to overall bound
+      lnZ = lnZ + table(gm.Alg.nodes(n).msgFwd); 
+      %fprintf('Root %d => %f\n',n,table(gm.Alg.nodes(n).msgFwd));
+    end; 
+  end;
+
+end; % (buckets / elimination order)
