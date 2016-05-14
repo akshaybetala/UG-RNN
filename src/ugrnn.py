@@ -23,70 +23,191 @@ apply gradients.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
-def inference(rnn_hidden_size,
-			rnn_output_size,
-			nn_hidden_size,
-			feature_placeholder,
-			path_placeholder,
-      sequence_length_placeholder,
-      contextual_vector_placeholder
-      ):
+
+def create_variable_for_NN(input_size,output_size,hidden_layer_size):
+  with tf.name_scope('input'):
+    weights = tf.get_variable("weights1",[input_size, hidden_layer_size],
+        initializer=tf.random_normal_initializer())
+    
+    # Create variable named "biases".
+    biases = tf.get_variable("biases1", [hidden_layer_size],
+        initializer=tf.constant_initializer(0.0))
+  
+  with tf.name_scope('hidden'):
+    weights = tf.get_variable("weights2",[hidden_layer_size,output_size],
+        initializer=tf.random_normal_initializer())
+    
+    # Create variable named "biases".
+    biases = tf.get_variable("biases2", [output_size],
+        initializer=tf.constant_initializer(0.0))
+    
+
+def single_layer_neural_network(inputs, 
+                                input_size, 
+                                output_size, 
+                                hidden_layer_size):
+    # Create variable named "weights".
+
+  with tf.name_scope('input'):
+    weights = tf.get_variable("weights1",[input_size, hidden_layer_size])
+    
+    # Create variable named "biases".
+    biases = tf.get_variable("biases1", [hidden_layer_size])
+
+    hidden1 = tf.tanh(tf.matmul(inputs, weights) + biases)
+  
+  with tf.name_scope('hidden'):
+    weights = tf.get_variable("weights2",[hidden_layer_size,output_size])
+    
+    # Create variable named "biases".
+    biases = tf.get_variable("biases2", [output_size])
+    
+    return tf.matmul(hidden1, weights) + biases
+
+def single_layer_neural_network1(inputs):
+    # Create variable named "weights".
+
+  with tf.name_scope('input'):
+    weights = tf.get_variable("weights1")
+    
+    # Create variable named "biases".
+    biases = tf.get_variable("biases1")
+
+    hidden1 = tf.tanh(tf.matmul(inputs, weights) + biases)
+  
+  with tf.name_scope('hidden'):
+    weights = tf.get_variable("weights2")
+    
+    # Create variable named "biases".
+    biases = tf.get_variable("biases2")
+    
+    return tf.matmul(hidden1, weights) + biases
+
+
+def cond(sequence_len, 
+        step,
+        feature_pl,
+        path_pl,
+        flattened_idx_offset,
+        contextual_features):
+  return tf.less(step,sequence_len- 1)
+
+def body(sequence_len, 
+        step, 
+        feature_pl,
+        path_pl,
+        flattened_idx_offset,
+        contextual_features):
+  
+  begin = tf.get_variable("begin1",[3],dtype=tf.int32,initializer=tf.constant_initializer(0))
+  begin = tf.scatter_update(begin,1,step,use_locking=None)
+
+  step_feature = tf.squeeze(tf.slice(feature_pl,begin,[-1,1,-1]))
+
+  input_idx = tf.slice(path_pl, begin, [-1,1,1])
+  input_idx = tf.reshape(input_idx,[-1])
+  input_idx_flattened = flattened_idx_offset + input_idx
+  max_seq_len = FLAGS.max_seq_len
+
+  begin2 = tf.get_variable("begin2",[3],dtype=tf.int32,initializer=tf.constant_initializer(0))
+  begin2 = tf.scatter_update(begin2,1,step,use_locking=None)
+  begin2 = tf.scatter_update(begin2,2,1,use_locking=None)
+
+  tf.get_variable_scope().reuse_variables()
+    
+  contextual_features = tf.get_variable("contextual_features")
+                                          # [max_seq_len * max_seq_len, encoding_nn_output_size],
+                                          # dtype=tf.float32)
+
+  step_contextual_features = tf.gather(contextual_features,input_idx_flattened)  # use flattened indices1
+  
+  inputs = tf.concat(1,[step_contextual_features,step_feature])
+  updated_contextual_vectors = single_layer_neural_network1(inputs)
+
+  updated_contextual_vectors = tf.tanh(updated_contextual_vectors)
+  output_idx = tf.reshape(tf.slice(path_pl, begin2, [-1,1, 1]),[-1])
+  output_idx_flattened =  flattened_idx_offset + output_idx
+  
+  contextual_features =  tf.scatter_add(contextual_features,
+                                        output_idx_flattened,
+                                        updated_contextual_vectors, use_locking=None)
+
+  with tf.control_dependencies([contextual_features]):
+    return (sequence_len, 
+            step+1, 
+            feature_pl,
+            path_pl,
+            flattened_idx_offset,
+            contextual_features)
+
+def create_model(encoding_nn_hidden_size,
+                 encoding_nn_output_size,
+                 output_nn_hidden_size,
+                 feature_pl,
+                 path_pl,
+                 sequence_len):
   """Build the ugrnn model up to where it may be used for inference."""
-  rnn_input_size = FLAGS.contextual_vector_size+ rnn_output_size
+ 
+  max_seq_len = FLAGS.max_seq_len
   
-  rnn_hidden_cell =  tf.nn.rnn_cell.BasicLSTMCell(rnn_hidden_size, forget_bias=0.0, input_size = rnn_input_size)
-  rnn_output_cell =  tf.nn.rnn_cell.BasicLSTMCell(rnn_output_size, forget_bias=0.0, input_size =rnn_hidden_size)
-  cell = tf.nn.rnn_cell.MultiRNNCell([rnn_hidden_cell,rnn_output_cell])
-  state_size = cell.state_size
-  states = tf.zeros([100,state_size], tf.float32)
-
-  # for time, input_ in enumerate(inputs):
-  #     if time > 0: vs.get_variable_scope().reuse_variables()
-  #     # pylint: disable=cell-var-from-loop
-  #     def output_state():
-  #       return cell(input_, state)
-  #     # pylint: enable=cell-var-from-loop
-  #     if sequence_length:
-  #       (output, state) = control_flow_ops.cond(
-  #           time >= max_sequence_length,
-  #           lambda: zero_output_state, output_state)
-  #     else:
-  #       (output, state) = output_state()
+  flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len
+  encoding_nn_input_size = encoding_nn_output_size + FLAGS.initial_feature_vector_size
+  # encoding_nn_output_size = tf.constant(encoding_nn_output_size)
+  # encoding_nn_hidden_size = tf.constant(encoding_nn_hidden_size)
 
 
-  with tf.variable_scope("RNN"):
-      for step in xrange(FLAGS.max_sequence_length):
-        if step > 0: tf.get_variable_scope().reuse_variables()
-
-        t1 = contextual_vector_placeholder[:,tf.squeeze(path_placeholder[step,:,0]),: ] 
-        t2 = tf.squeeze(feature_placeholder[step,:, :])
-        cell_inputs = tf.concat(1, [t1, t2])
-        (cell_output, output_state) = cell(cell_inputs,states)
-
-        contextual_vector_placeholder[:,path_placeholder[:,step,1]] = cell_output
-      
-      rnn_output = tf.reduce_sum(cell_output, 0)
-
-  # Hidden 1
-  with tf.name_scope('hidden1'):
-    weights = tf.Variable(  
-        tf.truncated_normal([rnn_output_size, nn_hidden_size],
-                            stddev=1.0 / math.sqrt(float(rnn_output_size))),
-        name='weights')
-    biases = tf.Variable(tf.zeros([nn_hidden_size]),
-                         name='biases')
-    hidden1 = tf.tanh(tf.matmul(rnn_output, weights) + biases)
+  encoding_nn_input_size = encoding_nn_output_size + FLAGS.initial_feature_vector_size
   
-  with tf.name_scope('out_linear'):
-    weights = tf.Variable(
-        tf.truncated_normal([rnn_output, 1],
-                            stddev=1.0 / math.sqrt(float(rnn_output))),
-        name='weights')
-    biases = tf.Variable(tf.zeros([1]),
-                         name='biases')
-    prediction = tf.matmul(hidden1, weights) + biases
-  return predicted
+  with tf.variable_scope("EncodingNN") as scope:
+    step = tf.constant(0)
+    contextual_features = tf.get_variable("contextual_features",
+                                          [max_seq_len*max_seq_len,encoding_nn_output_size],
+                                          dtype=tf.float32,
+                                          initializer=tf.constant_initializer(0))
+  
+    contextual_features = contextual_features.assign(
+                                      tf.zeros([max_seq_len*max_seq_len, encoding_nn_output_size],
+                                        dtype=tf.float32))
 
+    create_variable_for_NN(encoding_nn_input_size,
+                          encoding_nn_output_size,
+                          encoding_nn_hidden_size)
+
+    _,step,_,_,_,contextual_features = tf.while_loop(cond,
+                                                    body,
+                                                    [sequence_len,
+                                                     step, 
+                                                     feature_pl, 
+                                                     path_pl, 
+                                                     flattened_idx_offset, 
+                                                     contextual_features], 
+                                                    parallel_iterations=10, 
+                                                    back_prop=True, 
+                                                    swap_memory=False, 
+                                                    name=None)
+    
+    final_vector_idx = tf.range(0, sequence_len) + flattened_idx_offset
+    step_contextual_features = tf.gather(contextual_features, final_vector_idx)
+    
+    begin = tf.get_variable("begin1",[3],dtype=tf.int32)
+    begin = tf.scatter_update(begin,1,step,use_locking=None)
+    step_feature = tf.squeeze(tf.slice(feature_pl,begin,[-1,1,-1]),squeeze_dims=[1])
+
+    inputs = tf.concat(1,[step_contextual_features,step_feature])
+    encodings = single_layer_neural_network(inputs,
+                                            encoding_nn_input_size,
+                                            encoding_nn_output_size,
+                                            encoding_nn_hidden_size)
+
+    molecule_encoding = tf.expand_dims(tf.reduce_sum(tf.tanh(encodings), 0),0)
+  
+  with tf.variable_scope("OutputNN") as scope:
+    prediction = single_layer_neural_network(molecule_encoding,
+                                            encoding_nn_output_size,
+                                            1,
+                                            output_nn_hidden_size)
+
+  return prediction
 
 def loss(prediction, target):
   """Calculates the loss from the logits and the labels.
@@ -127,5 +248,6 @@ def training(loss, learning_rate):
 
 
 def evaluation(prediction, target):
+
   """Evaluate the quality of the logits at predicting the label."""
   return loss(prediction,target)

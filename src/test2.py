@@ -1,1 +1,0 @@
-feature_placeholder =[tf.placeholder(tf.int32, shape=(None,FLAGS.initial_feature_vector_size)) for i in xrange(0,FLAGS.maximum_sequence_length)]

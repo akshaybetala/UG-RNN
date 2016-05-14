@@ -6,7 +6,7 @@ import gzip
 import os
 import tempfile
 
-import numpy
+import numpy as np
 from six.moves import urllib
 from six.moves import xrange  
 import tensorflow as tf
@@ -49,8 +49,9 @@ class DataSet(object):
       # Finished epoch
       self._epochs_completed += 1
       # Shuffle the data
-      perm = numpy.arange(self._num_examples)
-      numpy.random.shuffle(perm)
+      perm = np.arange(self._num_examples)
+      np.random.shuffle(perm)
+
       self._molecules = self._molecules[perm]
       self._labels = self._labels[perm]
       # Start next epoch
@@ -61,12 +62,11 @@ class DataSet(object):
     return self._molecules[start:end], self._labels[start:end]
 
 def extract_molecules_from_smiles(SMILES):
-    molecules = []
     size = len(SMILES)
+    molecules = np.empty(size,dtype=object)
     # TODO: Change it back to batch_size
-    for i in xrange(2):
-      m = Molecule.Molecule(SMILES[i])
-      molecules.append(m)
+    for i in xrange(size):
+      molecules[i] = Molecule.Molecule(SMILES[i])
     return molecules
 
 def read_data_sets():

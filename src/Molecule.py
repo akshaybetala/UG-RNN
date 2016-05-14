@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import numpy as np 
 from rdkit.Chem.rdchem import BondType
 from rdkit import Chem
@@ -5,7 +9,6 @@ from rdkit.Chem import Draw
 import parse_solubility_data
 import networkx as nx
 import utils
-
 
 
 class Molecule:
@@ -51,7 +54,7 @@ class Molecule:
 				node = topological_order[i]
 				edge = (nx.edges(G,node))[0]
 				sorted_path[i,:] = [edge[0],edge[1]]
-	
+			# sorted_path[self.no_of_atoms-1, :] = [idx,self.no_of_atoms]
 			self.directed_graphs[idx,:,:] = sorted_path
 
 	def create_feature_vectors(self):
