@@ -45,23 +45,19 @@ class UGRNN(object):
     for i in xrange(20):
       with tf.variable_scope("model_{}".format(i)) as scope:
         # Build a Graph that computes predictions from the inference model.
-        model = network.Network(self.nn1_hidden_size[i],
-                                          self.nn1_output_size[i],
-                                          self.nn2_hidden_size[i],
-                                          self.feature_pl,
-                                          self.path_pl,
-                                          self.sequence_len_pl)
-        prediction_op = model.prediction
+        model = network.Network(encoding_nn_hidden_size = self.nn1_hidden_size[i],
+                                encoding_nn_output_size = self.nn1_output_size[i],
+                                output_nn_hidden_size = self.nn2_hidden_size[i],
+                                feature_pl = self.feature_pl,
+                                path_pl = self.path_pl,
+                                sequence_len = self.sequence_len_pl)
+        
+        model.add_loss_ops(loss_fun=rmse_loss, target_pl = self.targets_pl)
+        model.add_training_ops(FLAGS.learning_rate)
 
-        # Add to the Graph the Ops for loss calculation.
-        loss_op = network.Network.loss(prediction_op, self.targets_pl)
-
-        # # Add to the Graph the Ops that calculate and apply gradients.
-        train_op = network.Network.training(loss_op, FLAGS.learning_rate)
-
-        self.prediction_ops[i] = prediction_op
-        self.loss_ops[i] = loss_op
-        self.train_ops[i] = train_op
+        self.prediction_ops[i] = model.prediction_op
+        self.loss_ops[i] = model.loss_op
+        self.train_ops[i] = model.train_op
 
     self.prediction_ops = self.prediction_ops.tolist()
     self.loss_ops = self.loss_ops.tolist()
@@ -115,6 +111,14 @@ class UGRNN(object):
 
 def rmse(predictions, targets):
     return np.sqrt(((predictions - targets) ** 2).mean())
+
+def rmse_loss(prediction, target):
+    """Calculates the loss from the logits and the labels.
+
+    Returns:
+      loss: Loss tensor of type float.
+    """
+    return tf.nn.l2_loss(prediction-target, name=None)
 
 def main(_):
 

@@ -24,12 +24,8 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 class Network(object):
-  def __init__(self, encoding_nn_hidden_size,
-                   encoding_nn_output_size,
-                   output_nn_hidden_size,
-                   feature_pl,
-                   path_pl,
-                   sequence_len):
+  def __init__(self, encoding_nn_hidden_size, encoding_nn_output_size,
+               output_nn_hidden_size, feature_pl, path_pl, sequence_len):
     """Build the ugrnn model up to where it may be used for inference."""
    
     max_seq_len = FLAGS.max_seq_len
@@ -83,12 +79,11 @@ class Network(object):
       molecule_encoding = tf.expand_dims(tf.reduce_sum(tf.tanh(encodings), 0),0)
     
     with tf.variable_scope("OutputNN") as scope:
-      self.prediction = Network.single_layer_neural_network(molecule_encoding,
+      self.prediction_op = Network.single_layer_neural_network(molecule_encoding,
                                               encoding_nn_output_size,
                                               1,
                                               output_nn_hidden_size)
 
-    
 
   @staticmethod
   def create_variable_for_NN(input_size,output_size,hidden_layer_size):
@@ -209,17 +204,7 @@ class Network(object):
               flattened_idx_offset,
               contextual_features)
 
-  @staticmethod
-  def loss(prediction, target):
-    """Calculates the loss from the logits and the labels.
-
-    Returns:
-      loss: Loss tensor of type float.
-    """
-    return tf.nn.l2_loss(prediction-target, name=None)
-
-  @staticmethod
-  def training(loss, learning_rate):
+  def add_training_ops(self, learning_rate):
     """Sets up the training Ops.
 
     Creates a summarizer to track the loss over time in TensorBoard.
@@ -237,18 +222,18 @@ class Network(object):
       train_op: The Op for training.
     """
     # Add a scalar summary for the snapshot loss.
-    tf.scalar_summary(loss.op.name, loss)
+
+    tf.scalar_summary(self.loss_op.op.name, self.loss_op)
     # Create the gradient descent optimizer with the given learning rate.
     optimizer = tf.train.GradientDescentOptimizer(learning_rate)
     # Create a variable to track the global step.
     global_step = tf.Variable(0, name='global_step', trainable=False)
     # Use the optimizer to apply the gradients that minimize the loss
     # (and also increment the global step counter) as a single training step.
-    train_op = optimizer.minimize(loss, global_step=global_step)
-    return train_op
+    self.train_op = optimizer.minimize(self.loss_op, global_step=global_step)    
 
-  @staticmethod
-  def evaluation(prediction, target):
+  def add_loss_ops(self, loss_fun, target_pl):
 
     """Evaluate the quality of the logits at predicting the label."""
-    return loss(prediction,target)
+    self.loss_op = loss_fun(self.prediction_op, target_pl)
+    
