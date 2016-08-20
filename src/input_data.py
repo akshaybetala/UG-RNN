@@ -41,30 +41,21 @@ class DataSet(object):
   def epochs_completed(self):
     return self._epochs_completed
 
-  def next_batch(self, batch_size):
-    # Return the next `batch_size` examples from this data set.
-    start = self._index_in_epoch
-    self._index_in_epoch += batch_size
-    if self._index_in_epoch > self._num_examples:
-      # Finished epoch
+  def next_molecule(self):
+    # Return the next example from this data set.
+    
+    # Finished epoch
+    if self._index_in_epoch == self._num_examples-1:
       self._epochs_completed += 1
-      # Shuffle the data
-      perm = np.arange(self._num_examples)
-      np.random.shuffle(perm)
-
-      self._molecules = self._molecules[perm]
-      self._labels = self._labels[perm]
       # Start next epoch
-      start = 0
-      self._index_in_epoch = batch_size
-      assert batch_size <= self._num_examples
-    end = self._index_in_epoch
-    return self._molecules[start:end], self._labels[start:end]
+      self._index_in_epoch = 0
+      return self._molecules[self._num_examples-1], self._labels[self._num_examples-1]
+    self._index_in_epoch +=1
+    return self._molecules[self._index_in_epoch-1], self._labels[self._index_in_epoch-1]
 
 def extract_molecules_from_smiles(SMILES):
     size = len(SMILES)
     molecules = np.empty(size,dtype=object)
-    # TODO: Change it back to batch_size
     for i in xrange(size):
       molecules[i] = Molecule.Molecule(SMILES[i])
     return molecules
@@ -74,20 +65,31 @@ def read_data_sets():
     pass
   data_sets = DataSets()
 
-  SMILES, prediction_targets = parse_solubility_data.load_solubility_data(path = '../data/Delaney_solubility.txt')
-  molecules = extract_molecules_from_smiles(SMILES)
-  size = len(SMILES)
-  
-  TRAIN_SIZE = int(math.floor(0.7*size))
-  VALIDATION_SIZE = int(math.floor(0.1*size))
-  train_molecules = molecules[:TRAIN_SIZE]
-  train_labels = prediction_targets[:TRAIN_SIZE]
+  smiles, prediction_targets = parse_solubility_data.load_solubility_data(path = '../data/Delaney_solubility.txt')
+  molecules = extract_molecules_from_smiles(smiles)
+  num_examples = len(smiles)
 
-  validation_molecules = molecules[TRAIN_SIZE:TRAIN_SIZE+VALIDATION_SIZE]
-  validation_labels = prediction_targets[TRAIN_SIZE:TRAIN_SIZE+VALIDATION_SIZE]
+  total_training_size = int(math.floor(0.9 * num_examples) )
 
-  test_molecules = molecules[TRAIN_SIZE+VALIDATION_SIZE:]
-  test_labels = prediction_targets[TRAIN_SIZE+VALIDATION_SIZE:]
+  total_train_molecules = molecules[:total_training_size]
+  total_train_labels = prediction_targets[:total_training_size]
+
+  test_molecules = molecules[total_training_size:]
+  test_labels = prediction_targets[total_training_size:]
+
+  #Now divide the total training in training and validation set
+  if num_examples > 100:
+    train_ratio = .8
+  else:
+    train_ratio = .85
+
+  train_size = int(train_ratio*total_training_size)
+
+  train_molecules = total_train_molecules[:train_size]
+  train_labels = total_train_labels[:train_size]
+
+  validation_molecules = total_train_molecules[train_size:]
+  validation_labels = total_train_labels[train_size:]
 
   data_sets.train = DataSet(train_molecules, train_labels)
   data_sets.validation = DataSet(validation_molecules, validation_labels)

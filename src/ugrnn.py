@@ -1,253 +1,148 @@
+"""Trains and Evaluates the model."""
+# pylint: disable=missing-docstring
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import time
-
+import input_data
+import network
+import utils
 import numpy as np
+
+from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-from tensorflow.python.ops import array_ops
 
-"""Builds the UGRNN network.
 
-Implements the inference/loss/training pattern for model building.
-
-1. inference() - Builds the model as far as is required for running the network
-forward to make predictions.
-2. loss() - Adds to the inference model the layers required to generate loss.
-3. training() - Adds to the loss model the Ops required to generate and
-apply gradients.
-
-"""
-
+# Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
+flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
+flags.DEFINE_integer('max_epochs',1,'Number of epochs to run trainer')
+flags.DEFINE_string('train_dir', 'train', 'Directory to put the training data.')
+flags.DEFINE_integer('initial_feature_vector_size',utils.num_of_features(),'Size of the individual feature for all the nodes' )
+flags.DEFINE_integer('max_seq_len',100,'Size of the maximum molecule')
 
 
-def create_variable_for_NN(input_size,output_size,hidden_layer_size):
-  with tf.name_scope('input'):
-    weights = tf.get_variable("weights1",[input_size, hidden_layer_size],
-        initializer=tf.random_normal_initializer())
+class UGRNN(object):
+  nn1_hidden_size = [7,7,7,7,7,7,7,7,7,7,3,4,5,6,7,8,9,10,11,12] 
+  nn1_output_size = [3,4,5,6,7,8,9,10,11,12,3,3,3,3,3,3,3,3,3,3]
+  nn2_hidden_size = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
+  num_of_networks = 20
+
+  def __init__(self, sess):
+    self.feature_pl = tf.placeholder(tf.float32, shape=[None,None,FLAGS.initial_feature_vector_size])
+    self.path_pl = tf.placeholder(tf.int32, shape=[None,None,2])
+    self.targets_pl = tf.placeholder(tf.float32)
+    self.sequence_len_pl = tf.placeholder(tf.int32)
     
-    # Create variable named "biases".
-    biases = tf.get_variable("biases1", [hidden_layer_size],
-        initializer=tf.constant_initializer(0.0))
+    self.prediction_ops = np.empty(self.num_of_networks, dtype=object)
+    self.loss_ops = np.empty(self.num_of_networks, dtype=object)
+    self.train_ops = np.empty(self.num_of_networks, dtype=object)
+
+    self.sess = sess
+
+    for i in xrange(20):
+      with tf.variable_scope("model_{}".format(i)) as scope:
+        # Build a Graph that computes predictions from the inference model.
+        model = network.Network(self.nn1_hidden_size[i],
+                                          self.nn1_output_size[i],
+                                          self.nn2_hidden_size[i],
+                                          self.feature_pl,
+                                          self.path_pl,
+                                          self.sequence_len_pl)
+        prediction_op = model.prediction
+
+        # Add to the Graph the Ops for loss calculation.
+        loss_op = network.Network.loss(prediction_op, self.targets_pl)
+
+        # # Add to the Graph the Ops that calculate and apply gradients.
+        train_op = network.Network.training(loss_op, FLAGS.learning_rate)
+
+        self.prediction_ops[i] = prediction_op
+        self.loss_ops[i] = loss_op
+        self.train_ops[i] = train_op
+
+    self.prediction_ops = self.prediction_ops.tolist()
+    self.loss_ops = self.loss_ops.tolist()
+    self.train_ops = self.train_ops.tolist()
+
+  def train(self, dataset):
+    # start the training loop.
+      while dataset.epochs_completed < FLAGS.max_epochs:
+        start_time = time.time()
+
+        # Fill a feed dictionary with the molecule and target
+        # for this particular training step.
+        feed_dict = self.fill_feed_dict(dataset)
+        _, loss_values, prediction_values = self.sess.run([self.train_ops, self.loss_ops, self.prediction_ops],
+                                 feed_dict=feed_dict)
+        duration = time.time() - start_time
+
+  '''
+  Use the validation set to optimize select the top 10 networks with the minimum RMSE error
+  '''
+  def optimize(self, dataset):
+    total_loss_values = np.zeros(20)
+    while dataset.epochs_completed < 1:
+      feed_dict = self.fill_feed_dict(dataset)
+      loss_values, prediction_values = self.sess.run([self.loss_ops, self.prediction_ops],
+                                 feed_dict=feed_dict)
+      total_loss_values += np.array(loss_values)
+
+    #Get the 10 netowrks with minimum error
+    self.index_of_best_networks = total_loss_values.argsort()[:10]
+    self.final_prediction_ops = [ self.prediction_ops[index] for index in self.index_of_best_networks]
   
-  with tf.name_scope('hidden'):
-    weights = tf.get_variable("weights2",[hidden_layer_size,output_size],
-        initializer=tf.random_normal_initializer())
-    
-    # Create variable named "biases".
-    biases = tf.get_variable("biases2", [output_size],
-        initializer=tf.constant_initializer(0.0))
-    
 
-def single_layer_neural_network(inputs, 
-                                input_size, 
-                                output_size, 
-                                hidden_layer_size):
-    # Create variable named "weights".
-
-  with tf.name_scope('input'):
-    weights = tf.get_variable("weights1",[input_size, hidden_layer_size])
+  def predict(self, dataset):
+    predictions = []
+    while dataset.epochs_completed < 1:
+      feed_dict = self.fill_feed_dict(dataset)
+      prediction_values = self.sess.run([self.prediction_ops], feed_dict=feed_dict)
+      predictions.append(np.mean(prediction_values))
     
-    # Create variable named "biases".
-    biases = tf.get_variable("biases1", [hidden_layer_size])
+    return np.array(predictions)
+        
+  def fill_feed_dict(self, dataset):
+      molecules_feed, targets_feed = dataset.next_molecule()
+      feed_dict  = {self.feature_pl : molecules_feed.feature_vector,
+                self.path_pl : molecules_feed.directed_graphs,
+                self.targets_pl : targets_feed,
+                self.sequence_len_pl : molecules_feed.feature_vector.shape[1]}
+                
+      return feed_dict
 
-    hidden1 = tf.tanh(tf.matmul(inputs, weights) + biases)
+def rmse(predictions, targets):
+    return np.sqrt(((predictions - targets) ** 2).mean())
+
+def main(_):
+
+  data_sets = input_data.read_data_sets()
   
-  with tf.name_scope('hidden'):
-    weights = tf.get_variable("weights2",[hidden_layer_size,output_size])
+  with tf.Graph().as_default():
+    # Create a session for running Ops on the Graph.
+    sess = tf.Session()
+
+    ugrnn_model = UGRNN(sess)
+    # Build the summary operation based on the TF collection of Summaries.
+    summary_op = tf.merge_all_summaries()
+
+    # Create a saver for writing training checkpoints.
+    saver = tf.train.Saver()
     
-    # Create variable named "biases".
-    biases = tf.get_variable("biases2", [output_size])
-    
-    return tf.matmul(hidden1, weights) + biases
+    # Instantiate a SummaryWriter to output summaries and the Graph.
+    summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph)
 
-def single_layer_neural_network1(inputs):
-    # Create variable named "weights".
+    # Run the Op to initialize the variables.
+    init = tf.initialize_all_variables()
+    sess.run(init)
 
-  with tf.name_scope('input'):
-    weights = tf.get_variable("weights1")
-    
-    # Create variable named "biases".
-    biases = tf.get_variable("biases1")
+    ugrnn_model.train(data_sets.train)
+    ugrnn_model.optimize(data_sets.validation)
+    predictions = ugrnn_model.predict(data_sets.test)
 
-    hidden1 = tf.tanh(tf.matmul(inputs, weights) + biases)
-  
-  with tf.name_scope('hidden'):
-    weights = tf.get_variable("weights2")
-    
-    # Create variable named "biases".
-    biases = tf.get_variable("biases2")
-    
-    return tf.matmul(hidden1, weights) + biases
-
-
-def cond(sequence_len, 
-        step,
-        feature_pl,
-        path_pl,
-        flattened_idx_offset,
-        contextual_features):
-  return tf.less(step,sequence_len- 1)
-
-def body(sequence_len, 
-        step, 
-        feature_pl,
-        path_pl,
-        flattened_idx_offset,
-        contextual_features):
-  
-  begin = tf.get_variable("begin1",[3],dtype=tf.int32,initializer=tf.constant_initializer(0))
-  begin = tf.scatter_update(begin,1,step,use_locking=None)
-
-  step_feature = tf.squeeze(tf.slice(feature_pl,begin,[-1,1,-1]))
-
-  input_idx = tf.slice(path_pl, begin, [-1,1,1])
-  input_idx = tf.reshape(input_idx,[-1])
-  input_idx_flattened = flattened_idx_offset + input_idx
-  max_seq_len = FLAGS.max_seq_len
-
-  begin2 = tf.get_variable("begin2",[3],dtype=tf.int32,initializer=tf.constant_initializer(0))
-  begin2 = tf.scatter_update(begin2,1,step,use_locking=None)
-  begin2 = tf.scatter_update(begin2,2,1,use_locking=None)
-
-  tf.get_variable_scope().reuse_variables()
-    
-  contextual_features = tf.get_variable("contextual_features")
-                                          # [max_seq_len * max_seq_len, encoding_nn_output_size],
-                                          # dtype=tf.float32)
-
-  step_contextual_features = tf.gather(contextual_features,input_idx_flattened)  # use flattened indices1
-  
-  inputs = tf.concat(1,[step_contextual_features,step_feature])
-  updated_contextual_vectors = single_layer_neural_network1(inputs)
-
-  updated_contextual_vectors = tf.tanh(updated_contextual_vectors)
-  output_idx = tf.reshape(tf.slice(path_pl, begin2, [-1,1, 1]),[-1])
-  output_idx_flattened =  flattened_idx_offset + output_idx
-  
-  contextual_features =  tf.scatter_add(contextual_features,
-                                        output_idx_flattened,
-                                        updated_contextual_vectors, use_locking=None)
-
-  with tf.control_dependencies([contextual_features]):
-    return (sequence_len, 
-            step+1, 
-            feature_pl,
-            path_pl,
-            flattened_idx_offset,
-            contextual_features)
-
-def create_model(encoding_nn_hidden_size,
-                 encoding_nn_output_size,
-                 output_nn_hidden_size,
-                 feature_pl,
-                 path_pl,
-                 sequence_len):
-  """Build the ugrnn model up to where it may be used for inference."""
- 
-  max_seq_len = FLAGS.max_seq_len
-  
-  flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len
-  encoding_nn_input_size = encoding_nn_output_size + FLAGS.initial_feature_vector_size
-  # encoding_nn_output_size = tf.constant(encoding_nn_output_size)
-  # encoding_nn_hidden_size = tf.constant(encoding_nn_hidden_size)
-
-
-  encoding_nn_input_size = encoding_nn_output_size + FLAGS.initial_feature_vector_size
-  
-  with tf.variable_scope("EncodingNN") as scope:
-    step = tf.constant(0)
-    contextual_features = tf.get_variable("contextual_features",
-                                          [max_seq_len*max_seq_len,encoding_nn_output_size],
-                                          dtype=tf.float32,
-                                          initializer=tf.constant_initializer(0))
-  
-    contextual_features = contextual_features.assign(
-                                      tf.zeros([max_seq_len*max_seq_len, encoding_nn_output_size],
-                                        dtype=tf.float32))
-
-    create_variable_for_NN(encoding_nn_input_size,
-                          encoding_nn_output_size,
-                          encoding_nn_hidden_size)
-
-    _,step,_,_,_,contextual_features = tf.while_loop(cond,
-                                                    body,
-                                                    [sequence_len,
-                                                     step, 
-                                                     feature_pl, 
-                                                     path_pl, 
-                                                     flattened_idx_offset, 
-                                                     contextual_features], 
-                                                    parallel_iterations=10, 
-                                                    back_prop=True, 
-                                                    swap_memory=False, 
-                                                    name=None)
-    
-    final_vector_idx = tf.range(0, sequence_len) + flattened_idx_offset
-    step_contextual_features = tf.gather(contextual_features, final_vector_idx)
-    
-    begin = tf.get_variable("begin1",[3],dtype=tf.int32)
-    begin = tf.scatter_update(begin,1,step,use_locking=None)
-    step_feature = tf.squeeze(tf.slice(feature_pl,begin,[-1,1,-1]),squeeze_dims=[1])
-
-    inputs = tf.concat(1,[step_contextual_features,step_feature])
-    encodings = single_layer_neural_network(inputs,
-                                            encoding_nn_input_size,
-                                            encoding_nn_output_size,
-                                            encoding_nn_hidden_size)
-
-    molecule_encoding = tf.expand_dims(tf.reduce_sum(tf.tanh(encodings), 0),0)
-  
-  with tf.variable_scope("OutputNN") as scope:
-    prediction = single_layer_neural_network(molecule_encoding,
-                                            encoding_nn_output_size,
-                                            1,
-                                            output_nn_hidden_size)
-
-  return prediction
-
-def loss(prediction, target):
-  """Calculates the loss from the logits and the labels.
-
-  Returns:
-    loss: Loss tensor of type float.
-  """
-  return tf.nn.l2_loss(prediction-target, name=None)
-
-
-def training(loss, learning_rate):
-  """Sets up the training Ops.
-
-  Creates a summarizer to track the loss over time in TensorBoard.
-
-  Creates an optimizer and applies the gradients to all trainable variables.
-
-  The Op returned by this function is what must be passed to the
-  `sess.run()` call to cause the model to train.
-
-  Args:
-    loss: Loss tensor, from loss().
-    learning_rate: The learning rate to use for gradient descent.
-
-  Returns:
-    train_op: The Op for training.
-  """
-  # Add a scalar summary for the snapshot loss.
-  tf.scalar_summary(loss.op.name, loss)
-  # Create the gradient descent optimizer with the given learning rate.
-  optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-  # Create a variable to track the global step.
-  global_step = tf.Variable(0, name='global_step', trainable=False)
-  # Use the optimizer to apply the gradients that minimize the loss
-  # (and also increment the global step counter) as a single training step.
-  train_op = optimizer.minimize(loss, global_step=global_step)
-  return train_op
-
-
-def evaluation(prediction, target):
-
-  """Evaluate the quality of the logits at predicting the label."""
-  return loss(prediction,target)
+    error = rmse(data_sets.test.labels, predictions)
+    print(error)
+if __name__ == '__main__':
+  tf.app.run()
