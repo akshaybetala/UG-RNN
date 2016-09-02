@@ -16,6 +16,7 @@ class Molecule:
 	num_of_features = 0
 
 	def __init__(self,smile):
+		self.smile = smile
 		self.num_of_features = utils.num_of_features()
 		self.atoms = []
 		self.m = Chem.MolFromSmiles(smile)
@@ -35,7 +36,7 @@ class Molecule:
 		self.create_feature_vectors()
 
 	def create_directed_graphs(self):
-		self.directed_graphs = np.empty((self.no_of_atoms,self.no_of_atoms-1,2),dtype=int)
+		self.directed_graphs = np.empty((self.no_of_atoms,self.no_of_atoms-1,3),dtype=int)
 	
 		#parse all the atoms one by one and get directed graph to that atom
 		for idx in xrange(self.no_of_atoms):
@@ -49,11 +50,18 @@ class Molecule:
 
 			# do a topological sort to get a order of atoms with all edges pointing to the root
 			topological_order = nx.topological_sort(G)
-			sorted_path = np.empty((self.no_of_atoms-1,2))
+			sorted_path = np.empty((self.no_of_atoms-1,3))
+			no_of_incoming_edges = {}
 			for i in xrange(self.no_of_atoms-1):
 				node = topological_order[i]
 				edge = (nx.edges(G,node))[0]
-				sorted_path[i,:] = [edge[0],edge[1]]
+				if edge[1] in no_of_incoming_edges:
+					index = no_of_incoming_edges[edge[1]]
+					no_of_incoming_edges[edge[1]] += 1
+				else:
+					index = 0
+					no_of_incoming_edges[edge[1]] = 1
+				sorted_path[i,:] = [edge[0],edge[1],index]
 			# sorted_path[self.no_of_atoms-1, :] = [idx,self.no_of_atoms]
 			self.directed_graphs[idx,:,:] = sorted_path
 

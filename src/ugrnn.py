@@ -9,6 +9,7 @@ import input_data
 import network
 import utils
 import numpy as np
+np.set_printoptions(threshold=np.inf)
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
@@ -18,7 +19,7 @@ import tensorflow as tf
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
-flags.DEFINE_integer('max_epochs',1,'Number of epochs to run trainer')
+flags.DEFINE_integer('max_epochs',5000,'Number of epochs to run trainer')
 flags.DEFINE_string('train_dir', 'train', 'Directory to put the training data.')
 flags.DEFINE_integer('initial_feature_vector_size',utils.num_of_features(),'Size of the individual feature for all the nodes' )
 flags.DEFINE_integer('max_seq_len',100,'Size of the maximum molecule')
@@ -32,13 +33,13 @@ class UGRNN(object):
 
   def __init__(self, sess):
     self.feature_pl = tf.placeholder(tf.float32, shape=[None,None,FLAGS.initial_feature_vector_size])
-    self.path_pl = tf.placeholder(tf.int32, shape=[None,None,2])
+    self.path_pl = tf.placeholder(tf.int32, shape=[None,None,3])
     self.targets_pl = tf.placeholder(tf.float32)
     self.sequence_len_pl = tf.placeholder(tf.int32)
     
-    self.prediction_ops = np.empty(self.num_of_networks, dtype=object)
-    self.loss_ops = np.empty(self.num_of_networks, dtype=object)
-    self.train_ops = np.empty(self.num_of_networks, dtype=object)
+    self.prediction_ops = []
+    self.loss_ops = []
+    self.train_ops = []
 
     self.sess = sess
 
@@ -55,26 +56,23 @@ class UGRNN(object):
         model.add_loss_ops(loss_fun=rmse_loss, target_pl = self.targets_pl)
         model.add_training_ops(FLAGS.learning_rate)
 
-        self.prediction_ops[i] = model.prediction_op
-        self.loss_ops[i] = model.loss_op
-        self.train_ops[i] = model.train_op
+        self.prediction_ops.append(model.prediction_op)
+        self.loss_ops.append(model.loss_op)
+        self.train_ops.append(model.train_op)
 
-    self.prediction_ops = self.prediction_ops.tolist()
-    self.loss_ops = self.loss_ops.tolist()
-    self.train_ops = self.train_ops.tolist()
 
-  def train(self, dataset):
+
+  def train(self, dataset, epochs=1):
     # start the training loop.
-      while dataset.epochs_completed < FLAGS.max_epochs:
-        start_time = time.time()
+    dataset.reset_epoch ()
+    while dataset.epochs_completed < epochs:
 
-        # Fill a feed dictionary with the molecule and target
-        # for this particular training step.
-        feed_dict = self.fill_feed_dict(dataset)
-        _, loss_values, prediction_values = self.sess.run([self.train_ops, self.loss_ops, self.prediction_ops],
-                                 feed_dict=feed_dict)
-        duration = time.time() - start_time
-
+      # Fill a feed dictionary with the molecule and target
+      # for this particular training step.
+      feed_dict = self.fill_feed_dict(dataset)
+      _, loss_values, prediction_values = self.sess.run([self.train_ops, self.loss_ops, self.prediction_ops],
+                               feed_dict=feed_dict)
+        
   '''
   Use the validation set to optimize select the top 10 networks with the minimum RMSE error
   '''
@@ -86,12 +84,13 @@ class UGRNN(object):
                                  feed_dict=feed_dict)
       total_loss_values += np.array(loss_values)
 
-    #Get the 10 netowrks with minimum error
+    #Get the 10 netowrks with minimum error 
     self.index_of_best_networks = total_loss_values.argsort()[:10]
     self.final_prediction_ops = [ self.prediction_ops[index] for index in self.index_of_best_networks]
   
 
   def predict(self, dataset):
+    dataset.reset_epoch()
     predictions = []
     while dataset.epochs_completed < 1:
       feed_dict = self.fill_feed_dict(dataset)
@@ -122,7 +121,6 @@ def rmse_loss(prediction, target):
 
 def main(_):
 
-  data_sets = input_data.read_data_sets()
   
   with tf.Graph().as_default():
     # Create a session for running Ops on the Graph.
@@ -142,11 +140,18 @@ def main(_):
     init = tf.initialize_all_variables()
     sess.run(init)
 
-    ugrnn_model.train(data_sets.train)
+    data_sets = input_data.read_data_sets()
+    EPOCHS =0
+    while EPOCHS < FLAGS.max_epochs:
+      ugrnn_model.train(dataset=data_sets.train,epochs=2)
+      EPOCHS+=2
+      predictions = ugrnn_model.predict(data_sets.test)
+      error = rmse(data_sets.test.labels, predictions)
+      print("Epoch: {:}, Loss: {:}".format(EPOCHS,error))
+
     ugrnn_model.optimize(data_sets.validation)
     predictions = ugrnn_model.predict(data_sets.test)
-
     error = rmse(data_sets.test.labels, predictions)
-    print(error)
+
 if __name__ == '__main__':
   tf.app.run()

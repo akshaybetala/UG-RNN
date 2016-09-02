@@ -41,6 +41,14 @@ class DataSet(object):
   def epochs_completed(self):
     return self._epochs_completed
 
+  @property
+  def index_in_epoch(self):
+    return self._index_in_epoch
+
+  def reset_epoch(self):
+    self._index_in_epoch = 0
+    self._epochs_completed = 0
+
   def next_molecule(self):
     # Return the next example from this data set.
     
