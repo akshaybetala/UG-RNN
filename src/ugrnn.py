@@ -18,7 +18,7 @@ import tensorflow as tf
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
+flags.DEFINE_float('learning_rate', 0.1, 'Initial learning rate.')
 flags.DEFINE_integer('max_epochs',5000,'Number of epochs to run trainer')
 flags.DEFINE_string('train_dir', 'train', 'Directory to put the training data.')
 flags.DEFINE_integer('initial_feature_vector_size',utils.num_of_features(),'Size of the individual feature for all the nodes' )
@@ -29,7 +29,7 @@ class UGRNN(object):
   nn1_hidden_size = [7,7,7,7,7,7,7,7,7,7,3,4,5,6,7,8,9,10,11,12] 
   nn1_output_size = [3,4,5,6,7,8,9,10,11,12,3,3,3,3,3,3,3,3,3,3]
   nn2_hidden_size = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
-  num_of_networks = 20
+  num_of_networks = 1
 
   def __init__(self, sess):
     self.feature_pl = tf.placeholder(tf.float32, shape=[None,None,FLAGS.initial_feature_vector_size])
@@ -43,7 +43,7 @@ class UGRNN(object):
 
     self.sess = sess
 
-    for i in xrange(20):
+    for i in xrange(self.num_of_networks):
       with tf.variable_scope("model_{}".format(i)) as scope:
         # Build a Graph that computes predictions from the inference model.
         model = network.Network(encoding_nn_hidden_size = self.nn1_hidden_size[i],
@@ -140,13 +140,19 @@ def main(_):
     init = tf.initialize_all_variables()
     sess.run(init)
 
+    tvars = tf.trainable_variables()
+
+    for var in tvars:
+      print(var.name)
+
     data_sets = input_data.read_data_sets()
     EPOCHS =0
     while EPOCHS < FLAGS.max_epochs:
       ugrnn_model.train(dataset=data_sets.train,epochs=2)
       EPOCHS+=2
-      predictions = ugrnn_model.predict(data_sets.test)
-      error = rmse(data_sets.test.labels, predictions)
+      predictions = ugrnn_model.predict(data_sets.train)
+      print (zip(data_sets.train.labels, predictions))
+      error = rmse(data_sets.train.labels, predictions)
       print("Epoch: {:}, Loss: {:}".format(EPOCHS,error))
 
     ugrnn_model.optimize(data_sets.validation)

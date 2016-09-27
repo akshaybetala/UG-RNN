@@ -91,7 +91,8 @@ def read_data_sets():
   else:
     train_ratio = .85
 
-  train_size = int(train_ratio*total_training_size)
+  train_size = 10
+  #int(train_ratio*total_training_size)
 
   train_molecules = total_train_molecules[:train_size]
   train_labels = total_train_labels[:train_size]

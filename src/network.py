@@ -33,16 +33,13 @@ class Network(object):
     flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len * 4
     encoding_nn_input_size = 4*encoding_nn_output_size + FLAGS.initial_feature_vector_size
     
-    print('encoding_nn_hidden_size', encoding_nn_hidden_size)
-    print('encoding_nn_input_size', encoding_nn_input_size)
-    print('encoding_nn_output_size', encoding_nn_output_size)
- 
     with tf.variable_scope("EncodingNN") as scope:
       step = tf.constant(0)
       contextual_features = tf.get_variable("contextual_features",
                                             [max_seq_len*max_seq_len*4, encoding_nn_output_size],
                                             dtype=tf.float32,
-                                            initializer=tf.constant_initializer(0))
+                                            initializer=tf.constant_initializer(0),
+                                            trainable=False)
     
       contextual_features = contextual_features.assign(
                                         tf.zeros([max_seq_len*max_seq_len*4, encoding_nn_output_size],
@@ -56,16 +53,16 @@ class Network(object):
                                                       parallel_iterations=10, back_prop=True, 
                                                       swap_memory=False, name=None)
       
-       # use flattened indices1
+      # use flattened indices1
       step_contextual_features = Network.get_contextual_feature(contextual_features=contextual_features,
                                                                 index=0,
                                                                 flattened_idx_offset=flattened_idx_offset,
                                                                 encoding_nn_output_size=encoding_nn_output_size )
 
 
-      begin = tf.get_variable("begin1",[3],dtype=tf.int32)
-      begin = tf.scatter_update(begin,1,step,use_locking=None)
-      step_feature = tf.squeeze(tf.slice(feature_pl,begin,[-1,1,-1]),squeeze_dims=[1])
+      input_begin = tf.get_variable("input_begin",[3],dtype=tf.int32)
+      input_begin = tf.scatter_update(input_begin,1,step,use_locking=None)
+      step_feature = tf.squeeze(tf.slice(feature_pl,input_begin,[-1,1,-1]),squeeze_dims=[1])
 
       inputs = tf.concat(1,[step_contextual_features,step_feature])
       encodings = Network.single_layer_neural_network(inputs,
@@ -86,39 +83,31 @@ class Network(object):
   def create_variable_for_NN(input_size,output_size,hidden_layer_size):
     with tf.variable_scope('input') as scope:
       weights = tf.get_variable("weights",[input_size, hidden_layer_size],
-          initializer=tf.random_normal_initializer())
+          initializer=tf.random_normal_initializer(), trainable=True)
       
-      # Create variable named "biases".
       biases = tf.get_variable("biases", [hidden_layer_size],
-          initializer=tf.constant_initializer(0.0))
+          initializer=tf.constant_initializer(0.0),trainable=True)
     
     with tf.variable_scope('hidden') as scope:
       weights = tf.get_variable("weights",[hidden_layer_size,output_size],
-          initializer=tf.random_normal_initializer())
+          initializer=tf.random_normal_initializer(), trainable=True)
       
-      # Create variable named "biases".
       biases = tf.get_variable("biases", [output_size],
-          initializer=tf.constant_initializer(0.0))
+          initializer=tf.constant_initializer(0.0), trainable=True)
       
   @staticmethod
   def single_layer_neural_network(inputs, 
                                   input_size, 
                                   output_size, 
                                   hidden_layer_size):
-      # Create variable named "weights".
 
     with tf.variable_scope('input') as scope:
       weights = tf.get_variable("weights",[input_size, hidden_layer_size])
-      
-      # Create variable named "biases".
       biases = tf.get_variable("biases", [hidden_layer_size])
-
       hidden1 = tf.tanh(tf.matmul(inputs, weights) + biases)
     
     with tf.variable_scope('hidden') as scope:
       weights = tf.get_variable("weights",[hidden_layer_size,output_size])
-      
-      # Create variable named "biases".
       biases = tf.get_variable("biases", [output_size])
       
       return tf.matmul(hidden1, weights) + biases
@@ -129,16 +118,11 @@ class Network(object):
 
     with tf.variable_scope('input') as scope:
       weights = tf.get_variable("weights")
-      print(tf.shape(inputs))
-      # Create variable named "biases".
       biases = tf.get_variable("biases")
-
       hidden1 = tf.tanh(tf.matmul(inputs, weights) + biases)
     
     with tf.variable_scope('hidden') as scope:
       weights = tf.get_variable("weights")
-      
-      # Create variable named "biases".
       biases = tf.get_variable("biases")
       
       return tf.matmul(hidden1, weights) + biases
@@ -162,7 +146,7 @@ class Network(object):
           contextual_features,
           encoding_nn_output_size):
     
-    input_begin = tf.get_variable("begin1",[3],dtype=tf.int32,initializer=tf.constant_initializer(0))
+    input_begin = tf.get_variable("input_begin",[3],dtype=tf.int32,initializer=tf.constant_initializer(0), trainable=False)
     input_begin = tf.scatter_update(input_begin,1,step,use_locking=None)
 
     step_feature = tf.squeeze(tf.slice(feature_pl,input_begin,[-1,1,-1]))
@@ -171,7 +155,7 @@ class Network(object):
     input_idx = tf.reshape(input_idx,[-1])
     max_seq_len = FLAGS.max_seq_len
 
-    output_begin = tf.get_variable("begin2",[3],dtype=tf.int32,initializer=tf.constant_initializer(0))
+    output_begin = tf.get_variable("ouput_begin",[3],dtype=tf.int32,initializer=tf.constant_initializer(0), trainable=False)
     output_begin = tf.scatter_update(output_begin,1,step,use_locking=None)
     output_begin = tf.scatter_update(output_begin,2,1,use_locking=None)
 
