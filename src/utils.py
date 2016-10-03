@@ -7,8 +7,8 @@ def num_of_features():
 
 def atom_features(symbol):
 	return np.array(one_of_k_encoding_unk(symbol,
-		['C','H','N', 'O', 'S', 'F','Cl','Br','I','In','K','Na','?']))
-		# 'Ba','Sb','P','Be','Sn','Cu','B','Cd','Ca','As','Co','Cr',
+		['C','H','N', 'O', 'S', 'F','Cl','Br','I','In','K','Na',
+		'Ba','Sb','P','Be','Sn','Cu','B','Cd','Ca','As','Co','Cr','?']))
 		# 'Te','Fe','Pb','Mn','Hg','Mo','Ni','Se','Ti','Zn','Si',
 		# 'Mg','V','Li','Al','Zr','Bi','Pd','Pt','Ru','Rh','Ga','Ge',
 		# 'Ag','Tb','Ir','W','Cs','Re','Pr','Nd','Gd','Yb','Er',

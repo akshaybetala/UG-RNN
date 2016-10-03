@@ -45,7 +45,19 @@ class Network(object):
                                         tf.zeros([max_seq_len*max_seq_len*4, encoding_nn_output_size],
                                           dtype=tf.float32))
 
-      Network.create_variable_for_NN(encoding_nn_input_size, encoding_nn_output_size, encoding_nn_hidden_size)
+      with tf.variable_scope('input') as scope:
+        weights = tf.get_variable("weights",[encoding_nn_input_size, encoding_nn_hidden_size],
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+      
+        biases = tf.get_variable("biases", [encoding_nn_hidden_size],
+          initializer=tf.constant_initializer(0.0),trainable=True)
+    
+      with tf.variable_scope('hidden') as scope:
+        weights = tf.get_variable("weights",[encoding_nn_hidden_size,encoding_nn_output_size],
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+      
+        biases = tf.get_variable("biases", [encoding_nn_output_size],
+          initializer=tf.constant_initializer(0.0), trainable=True)
 
       _,step,_,_,_,contextual_features,_ = tf.while_loop(Network.cond, Network.body,
                                                       [sequence_len, step, feature_pl, path_pl, 
@@ -65,67 +77,50 @@ class Network(object):
       step_feature = tf.squeeze(tf.slice(feature_pl,input_begin,[-1,1,-1]),squeeze_dims=[1])
 
       inputs = tf.concat(1,[step_contextual_features,step_feature])
-      encodings = Network.single_layer_neural_network(inputs,
-                                              encoding_nn_input_size,
-                                              encoding_nn_output_size,
-                                              encoding_nn_hidden_size)
+      encodings = Network.apply_EncodingNN(inputs)
 
-      molecule_encoding = tf.expand_dims(tf.reduce_sum(tf.tanh(encodings), 0),0)
-    
+      molecule_encoding = tf.expand_dims(tf.reduce_sum(encodings, 0),0)
+
     with tf.variable_scope("OutputNN") as scope:
-      self.prediction_op = Network.single_layer_neural_network(molecule_encoding,
-                                              encoding_nn_output_size,
-                                              1,
-                                              output_nn_hidden_size)
+      with tf.variable_scope('input') as scope:
+        weights = tf.get_variable("weights",[encoding_nn_output_size, output_nn_hidden_size],
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+        
+        biases = tf.get_variable("biases", [output_nn_hidden_size],
+          initializer=tf.constant_initializer(0.0), trainable=True)
 
-
-  @staticmethod
-  def create_variable_for_NN(input_size,output_size,hidden_layer_size):
-    with tf.variable_scope('input') as scope:
-      weights = tf.get_variable("weights",[input_size, hidden_layer_size],
-          initializer=tf.random_normal_initializer(), trainable=True)
-      
-      biases = tf.get_variable("biases", [hidden_layer_size],
-          initializer=tf.constant_initializer(0.0),trainable=True)
+        hidden1 = tf.nn.relu(tf.matmul(molecule_encoding, weights) + biases)
     
-    with tf.variable_scope('hidden') as scope:
-      weights = tf.get_variable("weights",[hidden_layer_size,output_size],
-          initializer=tf.random_normal_initializer(), trainable=True)
-      
-      biases = tf.get_variable("biases", [output_size],
+      with tf.variable_scope('hidden1') as scope:
+        weights = tf.get_variable("weights",[output_nn_hidden_size,output_nn_hidden_size],
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+        
+        biases = tf.get_variable("biases", [output_nn_hidden_size],
           initializer=tf.constant_initializer(0.0), trainable=True)
       
-  @staticmethod
-  def single_layer_neural_network(inputs, 
-                                  input_size, 
-                                  output_size, 
-                                  hidden_layer_size):
+        hidden2 = tf.nn.relu(tf.matmul(hidden1, weights) + biases)
 
-    with tf.variable_scope('input') as scope:
-      weights = tf.get_variable("weights",[input_size, hidden_layer_size])
-      biases = tf.get_variable("biases", [hidden_layer_size])
-      hidden1 = tf.tanh(tf.matmul(inputs, weights) + biases)
-    
-    with tf.variable_scope('hidden') as scope:
-      weights = tf.get_variable("weights",[hidden_layer_size,output_size])
-      biases = tf.get_variable("biases", [output_size])
+      with tf.variable_scope('hidden2') as scope:
+        weights = tf.get_variable("weights",[output_nn_hidden_size,1],
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+        
+        biases = tf.get_variable("biases", [1],
+          initializer=tf.constant_initializer(0.0), trainable=True)
       
-      return tf.matmul(hidden1, weights) + biases
+        self.prediction_op = tf.matmul(hidden2, weights) + biases
+       
 
   @staticmethod
-  def single_layer_neural_network1(inputs):
-      # Create variable named "weights".
-
+  def apply_EncodingNN(inputs):
     with tf.variable_scope('input') as scope:
       weights = tf.get_variable("weights")
       biases = tf.get_variable("biases")
-      hidden1 = tf.tanh(tf.matmul(inputs, weights) + biases)
+      hidden = tf.nn.relu(tf.matmul(inputs, weights) + biases)
     
     with tf.variable_scope('hidden') as scope:
       weights = tf.get_variable("weights")
       biases = tf.get_variable("biases")
-      
-      return tf.matmul(hidden1, weights) + biases
+      return tf.matmul(hidden, weights) + biases
 
   @staticmethod
   def cond(sequence_len, 
@@ -169,8 +164,8 @@ class Network(object):
                                                               encoding_nn_output_size=encoding_nn_output_size )
     
     nn_inputs = tf.concat(1,[step_contextual_features,step_feature])
-    updated_contextual_vectors = Network.single_layer_neural_network1(nn_inputs)
-    updated_contextual_vectors = tf.tanh(updated_contextual_vectors)
+    updated_contextual_vectors = Network.apply_EncodingNN(nn_inputs)
+    updated_contextual_vectors = tf.nn.relu(updated_contextual_vectors)
     output_idx = tf.squeeze(tf.slice(path_pl, output_begin, [-1,1, 2]))
     
     contextual_features = Network.update_contextual_features(contextual_features=contextual_features,
@@ -188,38 +183,26 @@ class Network(object):
               contextual_features,
               encoding_nn_output_size)
 
-  def add_training_ops(self, learning_rate):
-    """Sets up the training Ops.
-
-    Creates a summarizer to track the loss over time in TensorBoard.
-
-    Creates an optimizer and applies the gradients to all trainable variables.
-
-    The Op returned by this function is what must be passed to the
-    `sess.run()` call to cause the model to train.
-
-    Args:
-      loss: Loss tensor, from loss().
-      learning_rate: The learning rate to use for gradient descent.
-
-    Returns:
-      train_op: The Op for training.
-    """
-    # Add a scalar summary for the snapshot loss.
+  def add_training_ops(self, global_step, initial_learning_rate):
+    def clip_gradient(gradient):
+      if gradient is not None:
+        return tf.mul(tf.clip_by_value(tf.abs(grad), 0.1, 1.), tf.sign(grad))
+      else:
+        return None
 
     tf.scalar_summary(self.loss_op.op.name, self.loss_op)
-    # Create the gradient descent optimizer with the given learning rate.
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate)
-    # Create a variable to track the global step.
-    global_step = tf.Variable(0, name='global_step', trainable=False)
-    # Use the optimizer to apply the gradients that minimize the loss
-    # (and also increment the global step counter) as a single training step.
-    self.train_op = optimizer.minimize(self.loss_op, global_step=global_step)    
+    
+    learning_rate = tf.train.exponential_decay(initial_learning_rate, global_step,
+                                           1000, 0.96)
+
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+    gvs = optimizer.compute_gradients(self.loss_op)
+    capped_gvs = [(clip_gradient(grad), var) for grad, var in gvs]
+    self.train_op = optimizer.apply_gradients(capped_gvs)
 
   def add_loss_ops(self, loss_fun, target_pl):
-
-    """Evaluate the quality of the logits at predicting the label."""
     self.loss_op = loss_fun(self.prediction_op, target_pl)
+
     
   """
   Contextual vector is flatted array

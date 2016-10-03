@@ -49,6 +49,11 @@ class DataSet(object):
     self._index_in_epoch = 0
     self._epochs_completed = 0
 
+    perm = np.arange(self._num_examples)
+    np.random.shuffle(perm)
+    self._molecules = self._molecules[perm]
+    self._labels = self._labels[perm]
+
   def next_molecule(self):
     # Return the next example from this data set.
     
@@ -91,8 +96,7 @@ def read_data_sets():
   else:
     train_ratio = .85
 
-  train_size = 10
-  #int(train_ratio*total_training_size)
+  train_size = int(train_ratio*total_training_size)
 
   train_molecules = total_train_molecules[:train_size]
   train_labels = total_train_labels[:train_size]
