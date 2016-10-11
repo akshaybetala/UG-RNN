@@ -5,9 +5,8 @@ from __future__ import print_function
 import numpy as np
 
 
-
-def load_solubility_data(path = '../data/Delaney_solubility.txt'):
-    f = file(path,'r')
+def load_solubility_data(file_path):
+    f = file(file_path,'r')
     txt = f.read()
     f.close()
     #print txt
@@ -22,11 +21,3 @@ def load_solubility_data(path = '../data/Delaney_solubility.txt'):
     prediction_targets = np.array([float(x[1]) for x in parsed[1:]],dtype='float32')
     SMILES = [x[-1] for x in parsed[1:]]
     return SMILES, prediction_targets
-
-
-if __name__=='__main__':
-    SMILES, prediction_targets = load_solubility_data(path = '../data/Delaney_solubility.txt')
-    
-    print(prediction_targets.min(), prediction_targets.mean(), prediction_targets.max())
-
-    #print SMILES

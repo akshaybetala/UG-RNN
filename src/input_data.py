@@ -73,12 +73,12 @@ def extract_molecules_from_smiles(SMILES):
       molecules[i] = Molecule.Molecule(SMILES[i])
     return molecules
 
-def read_data_sets():
+def read_data_sets(file_path):
   class DataSets(object):
     pass
   data_sets = DataSets()
 
-  smiles, prediction_targets = parse_solubility_data.load_solubility_data(path = '../data/Delaney_solubility.txt')
+  smiles, prediction_targets = parse_solubility_data.load_solubility_data(file_path = file_path)
   molecules = extract_molecules_from_smiles(smiles)
   num_examples = len(smiles)
 

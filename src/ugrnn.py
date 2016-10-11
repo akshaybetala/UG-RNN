@@ -17,17 +17,17 @@ import tensorflow as tf
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('learning_rate', 0.001, 'Initial learning rate.')
-flags.DEFINE_integer('max_epochs',5000,'Number of epochs to run trainer')
+flags.DEFINE_float('learning_rate', 0.0001, 'Initial learning rate.')
+flags.DEFINE_integer('max_epochs',2000,'Number of epochs to run trainer')
 flags.DEFINE_string('train_dir', 'train', 'Directory to put the training data.')
 flags.DEFINE_integer('initial_feature_vector_size',utils.num_of_features(),'Size of the individual feature for all the nodes' )
 flags.DEFINE_integer('max_seq_len',100,'Size of the maximum molecule')
 
 class UGRNN(object):
-  nn1_hidden_size = [7,7,7,7,7,7,7,7,7,7,3,4,5,6,7,8,9,10,11,12]*2
-  nn1_output_size = [3,4,5,6,7,8,9,10,11,12,3,3,3,3,3,3,3,3,3,3]*2
-  nn2_hidden_size = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]*20
-  num_of_networks = 1
+  nn1_hidden_size = [7,7,7,7,7,7,7,7,7,7,3,4,5,6,7,8,9,10,11,12]
+  nn1_output_size = [3,4,5,6,7,8,9,10,11,12,3,3,3,3,3,3,3,3,3,3]
+  nn2_hidden_size = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
+  num_of_networks = 20
 
   def __init__(self, sess, global_step, loss_fun):
     self.feature_pl = tf.placeholder(tf.float32, shape=[None,None,FLAGS.initial_feature_vector_size])
@@ -51,7 +51,7 @@ class UGRNN(object):
                                 path_pl = self.path_pl,
                                 sequence_len = self.sequence_len_pl)
         
-        model.add_loss_ops(loss_fun=rmse_loss, target_pl = self.targets_pl)
+        model.add_loss_ops(loss_fun=loss_fun, target_pl = self.targets_pl)
         model.add_training_ops(global_step=global_step, initial_learning_rate=FLAGS.learning_rate)
         self.prediction_ops.append(model.prediction_op)
         self.loss_ops.append(model.loss_op)
@@ -109,22 +109,31 @@ def rmse(predictions, targets):
 def aae(predictions, targets):
   return np.abs(predictions - targets).mean()
 
-def rmse_loss(prediction, target):
-  return tf.nn.l2_loss(prediction-target, name=None)
+def rmse_loss(predictions, targets):
+  # return tf.nn.l2_loss(prediction-targets, name=None)
+  return tf.reduce_mean(tf.square(prediction-targets))
 
-def aae_loss(prediction, target):
-  mean_absolute_error,update_op = tf.contrib.metrics.streaming_mean_absolute_error(predictions, target)
-  return mean_absolute_error
+def aae_loss(predictions, targets):
+  return tf.reduce_mean(tf.abs(predictions-targets))
 
 def main(_):
-
+  loss_type = 'rmse'
+  
+  if loss_type is 'aae':
+    loss_fun = aae_loss
+    loss = aae
+  else:
+    loss_fun = rmse_loss
+    loss = rmse
+  
   with tf.Graph().as_default():
     # Create a session for running Ops on the Graph.
     sess = tf.Session()
 
     global_step = tf.Variable(0, name='global_step', trainable=False)
 
-    ugrnn_model = UGRNN(sess=sess, global_step=global_step, loss_fun=rmse_loss)
+    print('Creating Graph')
+    ugrnn_model = UGRNN(sess=sess, global_step=global_step, loss_fun=loss_fun)
     # Build the summary operation based on the TF collection of Summaries.
     summary_op = tf.merge_all_summaries()
 
@@ -134,34 +143,39 @@ def main(_):
     # Instantiate a SummaryWriter to output summaries and the Graph.
     summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph)
 
+    print('Initializing')
     # Run the Op to initialize the variables.
     init = tf.initialize_all_variables()
     sess.run(init)
+    file_path = '../data/Delaney_solubility.txt'
 
-    data_sets = input_data.read_data_sets()
+    print('Reading Delaney Solubility DataSet')
+    data_sets = input_data.read_data_sets(file_path)
+    
+    print('Start Training')
     EPOCHS =0
+    epochs_pre_train = 5
     while EPOCHS < FLAGS.max_epochs:
-      ugrnn_model.train(dataset=data_sets.train,epochs=1)
-      EPOCHS+=1
+      ugrnn_model.train(dataset=data_sets.train,epochs=epochs_pre_train)
+      EPOCHS+=epochs_pre_train
       
       predictions = ugrnn_model.predict(data_sets.train)
       fp = open("results",'w')
       fp.write('\n'.join('%s %s' % x for x in zip(data_sets.train.labels, predictions)))
       fp.close()
-      # print (zip(data_sets.train.labels, predictions))
-      error1 = rmse(data_sets.train.labels, predictions)
+      error1 = loss(data_sets.train.labels, predictions)
 
-      
       predictions = ugrnn_model.predict(data_sets.validation)
-      # print (zip(data_sets.train.labels, predictions))
-      error2 = rmse(data_sets.validation.labels, predictions)
+      error2 = loss(data_sets.validation.labels, predictions)
       
       print("Epoch: {:}, Train Loss: {:}, Validation Loss: {:}".format(EPOCHS,error1,error2))
 
+    print('Training Finished')
+    print('Optimize network')
     ugrnn_model.optimize(data_sets.validation)
     predictions = ugrnn_model.predict(data_sets.test)
-    error = rmse(data_sets.test.labels, predictions)
-
+    error = loss(data_sets.test.labels, predictions)
+    print("Loss: {:}".format(error))
 if __name__ == '__main__':
   tf.app.run()
   

@@ -91,14 +91,14 @@ class Network(object):
 
         hidden1 = tf.nn.relu(tf.matmul(molecule_encoding, weights) + biases)
     
-      with tf.variable_scope('hidden1') as scope:
-        weights = tf.get_variable("weights",[output_nn_hidden_size,output_nn_hidden_size],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+      # with tf.variable_scope('hidden1') as scope:
+      #   weights = tf.get_variable("weights",[output_nn_hidden_size,output_nn_hidden_size],
+      #     initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
         
-        biases = tf.get_variable("biases", [output_nn_hidden_size],
-          initializer=tf.constant_initializer(0.0), trainable=True)
+      #   biases = tf.get_variable("biases", [output_nn_hidden_size],
+      #     initializer=tf.constant_initializer(0.0), trainable=True)
       
-        hidden2 = tf.nn.relu(tf.matmul(hidden1, weights) + biases)
+      #   hidden2 = tf.nn.relu(tf.matmul(hidden1, weights) + biases)
 
       with tf.variable_scope('hidden2') as scope:
         weights = tf.get_variable("weights",[output_nn_hidden_size,1],
@@ -107,7 +107,7 @@ class Network(object):
         biases = tf.get_variable("biases", [1],
           initializer=tf.constant_initializer(0.0), trainable=True)
       
-        self.prediction_op = tf.matmul(hidden2, weights) + biases
+        self.prediction_op = tf.matmul(hidden1, weights) + biases
        
 
   @staticmethod
@@ -193,7 +193,7 @@ class Network(object):
     tf.scalar_summary(self.loss_op.op.name, self.loss_op)
     
     learning_rate = tf.train.exponential_decay(initial_learning_rate, global_step,
-                                           1000, 0.96)
+                                           100, 0.96)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
     gvs = optimizer.compute_gradients(self.loss_op)
