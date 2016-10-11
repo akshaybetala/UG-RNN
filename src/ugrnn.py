@@ -111,7 +111,7 @@ def aae(predictions, targets):
 
 def rmse_loss(predictions, targets):
   # return tf.nn.l2_loss(prediction-targets, name=None)
-  return tf.reduce_mean(tf.square(prediction-targets))
+  return tf.reduce_mean(tf.square(predictions-targets))
 
 def aae_loss(predictions, targets):
   return tf.reduce_mean(tf.abs(predictions-targets))
