@@ -183,12 +183,13 @@ class Network(object):
               contextual_features,
               encoding_nn_output_size)
 
-  def add_training_ops(self, global_step, initial_learning_rate):
+  def add_training_ops(self, global_step, initial_learning_rate, weight_decay_factor = 0.5):
     def clip_gradient(gradient):
       if gradient is not None:
         return tf.mul(tf.clip_by_value(tf.abs(grad), 0.1, 1.), tf.sign(grad))
       else:
         return None
+
 
     tf.scalar_summary(self.loss_op.op.name, self.loss_op)
     
@@ -196,7 +197,10 @@ class Network(object):
                                            100, 0.96)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-    gvs = optimizer.compute_gradients(self.loss_op)
+
+    loss_op = self.loss_op + tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()])
+
+    gvs = optimizer.compute_gradients(loss_op)
     capped_gvs = [(clip_gradient(grad), var) for grad, var in gvs]
     self.train_op = optimizer.apply_gradients(capped_gvs)
 
