@@ -5,10 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 import time
-import input_data
-import network
-import utils
+from ugrnn import network, utils, input_data
 import numpy as np
+
 np.set_printoptions(threshold=np.inf)
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
@@ -117,6 +116,11 @@ def aae_loss(predictions, targets):
   return tf.reduce_mean(tf.abs(predictions-targets))
 
 def main(_):
+
+  print('Reading Delaney Solubility DataSet')
+  data_sets = input_data.read_data_sets()
+    
+
   loss_type = 'rmse'
   
   if loss_type is 'aae':
@@ -147,17 +151,13 @@ def main(_):
     # Run the Op to initialize the variables.
     init = tf.initialize_all_variables()
     sess.run(init)
-    file_path = '../data/Delaney_solubility.txt'
 
-    print('Reading Delaney Solubility DataSet')
-    data_sets = input_data.read_data_sets(file_path)
-    
     print('Start Training')
     EPOCHS =0
-    epochs_pre_train = 5
+    epochs_per_train = 5
     while EPOCHS < FLAGS.max_epochs:
-      ugrnn_model.train(dataset=data_sets.train,epochs=epochs_pre_train)
-      EPOCHS+=epochs_pre_train
+      ugrnn_model.train(dataset=data_sets.train,epochs=epochs_per_train)
+      EPOCHS+=epochs_per_train
       
       predictions = ugrnn_model.predict(data_sets.train)
       fp = open("results",'w')

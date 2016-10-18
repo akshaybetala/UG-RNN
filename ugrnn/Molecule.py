@@ -6,9 +6,8 @@ import numpy as np
 from rdkit.Chem.rdchem import BondType
 from rdkit import Chem
 from rdkit.Chem import Draw
-import parse_solubility_data
 import networkx as nx
-import utils
+from ugrnn import utils
 
 
 class Molecule:

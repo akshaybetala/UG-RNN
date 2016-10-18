@@ -2,17 +2,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import gzip
-import os
-import tempfile
-
 import numpy as np
-from six.moves import urllib
+import math
 from six.moves import xrange  
 import tensorflow as tf
-import Molecule
-import parse_solubility_data
-import math
+from ugrnn.Molecule import Molecule
+from ugrnn.data import delaney
 
 class DataSet(object):
 
@@ -70,15 +65,25 @@ def extract_molecules_from_smiles(SMILES):
     size = len(SMILES)
     molecules = np.empty(size,dtype=object)
     for i in xrange(size):
-      molecules[i] = Molecule.Molecule(SMILES[i])
+      molecules[i] = Molecule(SMILES[i])
     return molecules
 
-def read_data_sets(file_path):
+def read_data_sets(dataset_type = 'delaney'):
+
   class DataSets(object):
     pass
   data_sets = DataSets()
 
-  smiles, prediction_targets = parse_solubility_data.load_solubility_data(file_path = file_path)
+  smiles_path = delaney.smiles_path
+  target_path = delaney.target_path
+
+  with open(smiles_path) as f:
+    smiles = np.array([line.rstrip() for line in f])
+
+  with open(target_path) as f:
+    prediction_targets = np.array([float(line.rstrip()) for line in f])
+    
+
   molecules = extract_molecules_from_smiles(smiles)
   num_examples = len(smiles)
 
