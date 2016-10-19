@@ -24,8 +24,8 @@ flags.DEFINE_integer('max_seq_len',100,'Size of the maximum molecule')
 
 class UGRNN(object):
   nn1_hidden_size = [7,7,7,7,7,7,7,7,7,7,3,4,5,6,7,8,9,10,11,12]
-  nn1_output_size = [3,4,5,6,7,8,9,10,11,12,3,3,3,3,3,3,3,3,3,3]
-  nn2_hidden_size = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
+  nn1_output_size = [3,4,5,6,7,8,9,10,11,12,3,3,3,3,3,3,3,3,3,3]*5
+  nn2_hidden_size = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]*10
   num_of_networks = 10
 
   def __init__(self, sess, global_step, loss_fun):
@@ -58,10 +58,7 @@ class UGRNN(object):
         self.loss_ops.append(model.loss_op)
         self.train_ops.append(model.train_op)
     
-  def train(self, dataset, epochs=1):
-    # start the training loop.
-
-    for i in xrange(epochs):
+  def train(self, dataset):
       dataset.reset_epoch ()
       while dataset.epochs_completed < 1:
         feed_dict = self.fill_feed_dict(dataset)
@@ -98,7 +95,7 @@ class UGRNN(object):
       molecules_feed, targets_feed = dataset.next_molecule()
 
       feed_dict  = {self.feature_pl : molecules_feed.feature_vector,
-                      self.path_pl : molecules_feed.directed_graphs,
+                    self.path_pl : molecules_feed.directed_graphs,
                     self.targets_pl : targets_feed,
                     self.sequence_len_pl : molecules_feed.feature_vector.shape[1]}
       
@@ -119,7 +116,7 @@ def aae_loss(predictions, targets):
 
 def main(_):
 
-  loss_type = 'rmse'
+  loss_type = 'aae'
   
   if loss_type is 'aae':
     loss_fun = aae_loss
@@ -135,7 +132,9 @@ def main(_):
     global_step = tf.Variable(0, name='global_step', trainable=False)
 
     print('Creating Graph')
+    
     ugrnn_model = UGRNN(sess=sess, global_step=global_step, loss_fun=loss_fun)
+    
     # Build the summary operation based on the TF collection of Summaries.
     summary_op = tf.merge_all_summaries()
 
@@ -146,32 +145,36 @@ def main(_):
     summary_writer = tf.train.SummaryWriter(FLAGS.train_dir, sess.graph)
 
     print('Initializing')
+    
     # Run the Op to initialize the variables.
     init = tf.initialize_all_variables()
+    
     sess.run(init)
 
     print('Reading Delaney Solubility DataSet')
+    
     data_sets = input_data.read_data_sets()
  
     print('Start Training')
-    EPOCHS =0
-    epochs_per_train = 2
-    while EPOCHS < FLAGS.max_epochs:
-      ugrnn_model.train(dataset=data_sets.train,epochs=epochs_per_train)
-      EPOCHS+=epochs_per_train
-      
-      predictions = ugrnn_model.predict(data_sets.train)
-      fp = open("results",'w')
-      fp.write('\n'.join('%s %s' % x for x in zip(data_sets.train.labels, predictions)))
-      fp.close()
-      error1 = loss(data_sets.train.labels, predictions)
+    
+    for epochs in xrange(0,FLAGS.max_epochs):
+      ugrnn_model.train(dataset=data_sets.train)
+      if epochs % 10 == 0:
+        predictions = ugrnn_model.predict(data_sets.train)
+        fp = open("results",'w')
+        fp.write('\n'.join('%s %s' % x for x in zip(data_sets.train.labels, predictions)))
+        fp.close()
+        error1 = loss(data_sets.train.labels, predictions)
 
-      predictions = ugrnn_model.predict(data_sets.validation)
-      error2 = loss(data_sets.validation.labels, predictions)
-      
-      print("Epoch: {:}, Train Loss: {:}, Validation Loss: {:}".format(EPOCHS,error1,error2))
+        predictions = ugrnn_model.predict(data_sets.validation)
+        error2 = loss(data_sets.validation.labels, predictions)
+        
+        print("Epoch: {:}, Train Loss: {:}, Validation Loss: {:}".format(EPOCHS,error1,error2))
 
     print('Training Finished')
+    
+
+
     print('Optimize network')
     ugrnn_model.optimize(data_sets.validation)
     predictions = ugrnn_model.predict(data_sets.test)
