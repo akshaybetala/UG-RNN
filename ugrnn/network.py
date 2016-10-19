@@ -24,10 +24,10 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 
 class Network(object):
-  def __init__(self, encoding_nn_hidden_size, encoding_nn_output_size,
+  def __init__(self, name, encoding_nn_hidden_size, encoding_nn_output_size,
                output_nn_hidden_size, feature_pl, path_pl, sequence_len):
     """Build the ugrnn model up to where it may be used for inference."""
-   
+    self.name = name
     max_seq_len = FLAGS.max_seq_len
     
     flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len * 4
@@ -47,14 +47,16 @@ class Network(object):
 
       with tf.variable_scope('input') as scope:
         weights = tf.get_variable("weights",[encoding_nn_input_size, encoding_nn_hidden_size],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True
+          ,collections = ['WEIGHTS',tf.GraphKeys.VARIABLES])
       
         biases = tf.get_variable("biases", [encoding_nn_hidden_size],
           initializer=tf.constant_initializer(0.0),trainable=True)
     
       with tf.variable_scope('hidden') as scope:
         weights = tf.get_variable("weights",[encoding_nn_hidden_size,encoding_nn_output_size],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True,
+          collections = ['WEIGHTS', tf.GraphKeys.VARIABLES])
       
         biases = tf.get_variable("biases", [encoding_nn_output_size],
           initializer=tf.constant_initializer(0.0), trainable=True)
@@ -84,7 +86,8 @@ class Network(object):
     with tf.variable_scope("OutputNN") as scope:
       with tf.variable_scope('input') as scope:
         weights = tf.get_variable("weights",[encoding_nn_output_size, output_nn_hidden_size],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True,
+          collections = ['WEIGHTS' , tf.GraphKeys.VARIABLES])
         
         biases = tf.get_variable("biases", [output_nn_hidden_size],
           initializer=tf.constant_initializer(0.0), trainable=True)
@@ -93,7 +96,8 @@ class Network(object):
     
       # with tf.variable_scope('hidden1') as scope:
       #   weights = tf.get_variable("weights",[output_nn_hidden_size,output_nn_hidden_size],
-      #     initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+      #     initializer=tf.contrib.layers.xavier_initializer(), trainable=True ,
+      #     collections = ['WEIGHTS', tf.GraphKeys.VARIABLES])
         
       #   biases = tf.get_variable("biases", [output_nn_hidden_size],
       #     initializer=tf.constant_initializer(0.0), trainable=True)
@@ -102,7 +106,8 @@ class Network(object):
 
       with tf.variable_scope('hidden2') as scope:
         weights = tf.get_variable("weights",[output_nn_hidden_size,1],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True)
+          initializer=tf.contrib.layers.xavier_initializer(), trainable=True,
+          collections = ['WEIGHTS', tf.GraphKeys.VARIABLES])
         
         biases = tf.get_variable("biases", [1],
           initializer=tf.constant_initializer(0.0), trainable=True)
@@ -183,7 +188,8 @@ class Network(object):
               contextual_features,
               encoding_nn_output_size)
 
-  def add_training_ops(self, global_step, initial_learning_rate, weight_decay_factor = 0.5):
+  def add_training_ops(self, global_step, initial_learning_rate, weight_decay_factor = 0.0):
+    
     def clip_gradient(gradient):
       if gradient is not None:
         return tf.mul(tf.clip_by_value(tf.abs(grad), 0.1, 1.), tf.sign(grad))
@@ -192,13 +198,20 @@ class Network(object):
 
 
     tf.scalar_summary(self.loss_op.op.name, self.loss_op)
-    
-    learning_rate = tf.train.exponential_decay(initial_learning_rate, global_step,
-                                           100, 0.96)
+    # learning_rate = initial_learning_rate
+    learning_rate =  tf.train.exponential_decay(learning_rate = initial_learning_rate,
+                                                global_step =  global_step, 
+                                                decay_steps = 100, 
+                                                decay_rate = 0.96,
+                                                staircase=True)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
-    loss_op = self.loss_op + tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables()])
+    for weight in tf.get_collection(key = 'WEIGHTS', scope = self.name):
+      print(weight.name)
+
+    loss_op = self.loss_op  + \
+          weight_decay_factor*tf.add_n([tf.nn.l2_loss(weight) for weight in tf.get_collection(key = 'WEIGHTS', scope = self.name)])
 
     gvs = optimizer.compute_gradients(loss_op)
     capped_gvs = [(clip_gradient(grad), var) for grad, var in gvs]

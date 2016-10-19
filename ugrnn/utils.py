@@ -5,43 +5,26 @@ from rdkit import Chem
 def num_of_features():
 		return num_bond_features()+num_atom_features()
 
-def atom_features(symbol):
-	return np.array(one_of_k_encoding_unk(symbol,
-		['C','H','N', 'O', 'S', 'F','Cl','Br','I','In','K','Na',
-		'Ba','Sb','P','Be','Sn','Cu','B','Cd','Ca','As','Co','Cr','?']))
-		# 'Te','Fe','Pb','Mn','Hg','Mo','Ni','Se','Ti','Zn','Si',
-		# 'Mg','V','Li','Al','Zr','Bi','Pd','Pt','Ru','Rh','Ga','Ge',
-		# 'Ag','Tb','Ir','W','Cs','Re','Pr','Nd','Gd','Yb','Er',
-		# 'U','Tl','Au','Ac','Ho','Os','Sm','Nb','?']))
-
-				# one_of_k_encoding(atom.GetDegree(), [0, 1, 2, 3, 4, 5]) +
-				# one_of_k_encoding_unk(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +
-				# one_of_k_encoding_unk(atom.GetImplicitValence(), [0, 1, 2, 3, 4, 5]) +
-				# [atom.GetIsAromatic()])
+def atom_features(atom):
+	return np.array(one_of_k_encoding_unk(atom.GetSymbol(),
+				['C', 'N', 'O', 'S', 'F', 'Si', 'P', 'Cl', 'Br', 'Mg', 'Na',
+				'Ca', 'Fe', 'As', 'Al', 'I', 'B', 'V', 'K', 'Tl', 'Yb',
+				'Sb', 'Sn', 'Ag', 'Pd', 'Co', 'Se', 'Ti', 'Zn', 'H',    # H?
+				'Li', 'Ge', 'Cu', 'Au', 'Ni', 'Cd', 'In', 'Mn', 'Zr',
+				'Cr', 'Pt', 'Hg', 'Pb', 'Unknown']) +
+			one_of_k_encoding(atom.GetDegree(), [0, 1, 2, 3, 4, 5]) +
+			one_of_k_encoding_unk(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +
+			one_of_k_encoding_unk(atom.GetImplicitValence(), [0, 1, 2, 3, 4, 5]) +
+			[atom.GetIsAromatic()])
 
 def bond_features(bond):
 	bt = bond.GetBondType()
-	return np.array([bt == BondType.UNSPECIFIED,
-					bt == BondType.SINGLE,
-					bt == BondType.DOUBLE,
-					bt == BondType.TRIPLE,
-					bt == BondType.QUADRUPLE,
-					# bt == BondType.QUINTUPLE,
-					# bt == BondType.HEXTUPLE,
-					# bt == BondType.ONEANDAHALF,
-					# bt == BondType.TWOANDAHALF,
-					# bt == BondType.THREEANDAHALF,
-					# bt == BondType.FOURANDAHALF,
-					# bt == BondType.FIVEANDAHALF,
-					# bt == BondType.AROMATIC,
-					# bt == BondType.IONIC,
-					# bt == BondType.HYDROGEN,
-					# bt == BondType.THREECENTER,
-					# bt == BondType.DATIVEONE,
-					# bt == BondType.DATIVE,
-					# bt == BondType.DATIVEL,
-					# bt == BondType.DATIVER,
-					bt == BondType.OTHER])
+	return np.array([bt == Chem.rdchem.BondType.SINGLE,
+					bt == Chem.rdchem.BondType.DOUBLE,
+					bt == Chem.rdchem.BondType.TRIPLE,
+					bt == Chem.rdchem.BondType.AROMATIC,
+					bond.GetIsConjugated(),
+					bond.IsInRing()])
 
 def one_of_k_encoding(x, allowable_set):
 	if x not in allowable_set:

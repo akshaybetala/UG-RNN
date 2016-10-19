@@ -26,7 +26,7 @@ class Molecule:
 		for i in xrange(self.no_of_atoms):
 			self.graph.add_node(i)
 			atom = self.m.GetAtomWithIdx(i)
-			self.atoms.append(atom.GetSymbol())
+			self.atoms.append(atom)
 			for neighbour in atom.GetNeighbors():
 				neighbour_idx = neighbour.GetIdx()
 				self.graph.add_edge(i,neighbour_idx)
