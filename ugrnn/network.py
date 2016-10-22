@@ -92,7 +92,7 @@ class Network(object):
         biases = tf.get_variable("biases", [output_nn_hidden_size],
           initializer=tf.constant_initializer(0.0), trainable=True)
 
-        hidden1 = tf.nn.relu(tf.matmul(molecule_encoding, weights) + biases)
+        hidden1 = tf.nn.tanh(tf.matmul(molecule_encoding, weights) + biases)
     
       # with tf.variable_scope('hidden1') as scope:
       #   weights = tf.get_variable("weights",[output_nn_hidden_size,output_nn_hidden_size],
@@ -102,7 +102,7 @@ class Network(object):
       #   biases = tf.get_variable("biases", [output_nn_hidden_size],
       #     initializer=tf.constant_initializer(0.0), trainable=True)
       
-      #   hidden2 = tf.nn.relu(tf.matmul(hidden1, weights) + biases)
+      #   hidden2 = tf.nn.tanh(tf.matmul(hidden1, weights) + biases)
 
       with tf.variable_scope('hidden2') as scope:
         weights = tf.get_variable("weights",[output_nn_hidden_size,1],
@@ -120,7 +120,7 @@ class Network(object):
     with tf.variable_scope('input') as scope:
       weights = tf.get_variable("weights")
       biases = tf.get_variable("biases")
-      hidden = tf.nn.relu(tf.matmul(inputs, weights) + biases)
+      hidden = tf.nn.tanh(tf.matmul(inputs, weights) + biases)
     
     with tf.variable_scope('hidden') as scope:
       weights = tf.get_variable("weights")
@@ -170,7 +170,7 @@ class Network(object):
     
     nn_inputs = tf.concat(1,[step_contextual_features,step_feature])
     updated_contextual_vectors = Network.apply_EncodingNN(nn_inputs)
-    updated_contextual_vectors = tf.nn.relu(updated_contextual_vectors)
+    updated_contextual_vectors = tf.nn.tanh(updated_contextual_vectors)
     output_idx = tf.squeeze(tf.slice(path_pl, output_begin, [-1,1, 2]))
     
     contextual_features = Network.update_contextual_features(contextual_features=contextual_features,
@@ -188,7 +188,7 @@ class Network(object):
               contextual_features,
               encoding_nn_output_size)
 
-  def add_training_ops(self, global_step, initial_learning_rate, weight_decay_factor = 0.5):
+  def add_training_ops(self,learning_rate):
     
     def clip_gradient(gradient):
       if gradient is not None:
@@ -197,23 +197,12 @@ class Network(object):
         return None
 
 
-    tf.scalar_summary(self.loss_op.op.name, self.loss_op)
-    # learning_rate = initial_learning_rate
-    learning_rate =  tf.train.exponential_decay(learning_rate = initial_learning_rate,
-                                                global_step =  global_step, 
-                                                decay_steps = 100, 
-                                                decay_rate = 0.96,
-                                                staircase=True)
-
-    tf.scalar_summary("learning_rate", learning_rate)
-
+    # tf.scalar_summary(self.loss_op.op.name, self.loss_op)
+    
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
 
-    # for weight in tf.get_collection(key = 'WEIGHTS', scope = self.name):
-    #   print(weight.name)
-
-    loss_op = self.loss_op  + \
-          weight_decay_factor*tf.add_n([tf.nn.l2_loss(weight) for weight in tf.get_collection(key = 'WEIGHTS', scope = self.name)])
+    loss_op = self.loss_op  
+          # FLAGS.weight_decay_rate*tf.add_n([tf.nn.l2_loss(weight) for weight in tf.get_collection(key = 'WEIGHTS', scope = self.name)])
 
     gvs = optimizer.compute_gradients(loss_op)
     capped_gvs = [(clip_gradient(grad), var) for grad, var in gvs]

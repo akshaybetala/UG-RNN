@@ -7,7 +7,7 @@ from rdkit.Chem.rdchem import BondType
 from rdkit import Chem
 from rdkit.Chem import Draw
 import networkx as nx
-import utils
+from ugrnn import utils
 
 
 class Molecule:
@@ -26,7 +26,6 @@ class Molecule:
 		for i in xrange(self.no_of_atoms):
 			self.graph.add_node(i)
 			atom = self.m.GetAtomWithIdx(i)
-			print(atom.GetSymbol())
 			self.atoms.append(atom)
 			for neighbour in atom.GetNeighbors():
 				neighbour_idx = neighbour.GetIdx()
