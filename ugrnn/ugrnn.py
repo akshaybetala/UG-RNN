@@ -17,10 +17,9 @@ from tensorflow.python.ops import math_ops
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('max_learning_rate', 0.00005, 'Initial learning rate.')
+flags.DEFINE_float('max_learning_rate', 0.001, 'Initial learning rate.')
 flags.DEFINE_float('min_learning_rate', 0.00001, 'Initial learning rate.')
-flags.DEFINE_float('weight_decay_rate', 0.0000, 'Initial learning rate.')
-flags.DEFINE_integer('max_epochs',4000,'Number of epochs to run trainer')
+flags.DEFINE_integer('max_epochs',2000,'Number of epochs to run trainer')
 flags.DEFINE_string('train_dir', 'train', 'Directory to put the training data.')
 flags.DEFINE_integer('initial_feature_vector_size',utils.num_of_features(),'Size of the individual feature for all the nodes' )
 flags.DEFINE_integer('max_seq_len',100,'Size of the maximum molecule')
@@ -39,7 +38,15 @@ class UGRNN(object):
     self.global_step = tf.Variable(0, name='global_step', trainable=False)
     self.global_step_update_op = tf.assign(self.global_step, tf.add(self.global_step, tf.constant(1)))
     
-    self.learning_rate =  self.linear_rate_decay(FLAGS.max_learning_rate, FLAGS.min_learning_rate) 
+    # self.learning_rate =  self.linear_rate_decay(FLAGS.max_learning_rate, FLAGS.min_learning_rate) 
+
+    self.learning_rate = tf.train.exponential_decay(learning_rate = FLAGS.max_learning_rate,
+                                                    global_step =  self.global_step, 
+                                                    decay_steps = 25, 
+                                                    decay_rate = 0.93,
+                                                    staircase=False)
+
+    self.learning_rate = tf.maximum(self.learning_rate, FLAGS.min_learning_rate)
     
     self.prediction_ops = []
     self.loss_ops = []
@@ -83,15 +90,16 @@ class UGRNN(object):
   Use the validation set to optimize select the top 10 networks with the minimum RMSE error
   '''
   def optimize(self, dataset):
-    total_loss_values = np.zeros(20)
-    while dataset.epochs_completed < 1:
+    n = UGRNN.num_of_networks
+    total_loss_values = np.zeros(n)
+    while dataset.epochs_completed < 1: 
       feed_dict = self.fill_feed_dict(dataset)
       loss_values, prediction_values = self.sess.run([self.loss_ops, self.prediction_ops],
                                  feed_dict=feed_dict)
       total_loss_values += np.array(loss_values)
 
     #Get the 10 netowrks with minimum error 
-    self.index_of_best_networks = total_loss_values.argsort()[-10:]
+    self.index_of_best_networks = total_loss_values.argsort()[int(-n/2):]
     self.final_prediction_ops = [ self.prediction_ops[index] for index in self.index_of_best_networks]
   
   def predict(self, dataset):
@@ -129,7 +137,7 @@ def aae_loss(predictions, targets):
 
 def main(_):
 
-  loss_type = 'rmse'
+  loss_type = 'aae'
   
   if loss_type is 'aae':
     loss_fun = aae_loss
@@ -193,7 +201,7 @@ def main(_):
 
 
     print('Optimize network')
-    # ugrnn_model.optimize(data_sets.validation)
+    ugrnn_model.optimize(data_sets.validation)
     predictions = ugrnn_model.predict(data_sets.test)
     error = loss(data_sets.test.labels, predictions)
     print("Loss: {:}".format(error))
