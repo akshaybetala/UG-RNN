@@ -14,15 +14,21 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 from tensorflow.python.ops import math_ops
 
+import matplotlib.pyplot as plt
+
 # Basic model parameters as external flags.
 flags = tf.app.flags
 FLAGS = flags.FLAGS
-flags.DEFINE_float('max_learning_rate', 0.001, 'Initial learning rate.')
+flags.DEFINE_float('max_learning_rate', 0.00002, 'Initial learning rate.')
 flags.DEFINE_float('min_learning_rate', 0.00001, 'Initial learning rate.')
-flags.DEFINE_integer('max_epochs',2000,'Number of epochs to run trainer')
+flags.DEFINE_integer('max_epochs',4000,'Number of epochs to run trainer')
 flags.DEFINE_string('train_dir', 'train', 'Directory to put the training data.')
 flags.DEFINE_integer('initial_feature_vector_size',utils.num_of_features(),'Size of the individual feature for all the nodes' )
 flags.DEFINE_integer('max_seq_len',100,'Size of the maximum molecule')
+
+
+plt.axis([0, FLAGS.max_epochs, 0, 4])
+plt.ion()
 
 class UGRNN(object):
   nn1_hidden_size = [7,7,7,7,7,7,7,7,7,7,3,4,5,6,7,8,9,10,11,12]
@@ -42,9 +48,11 @@ class UGRNN(object):
 
     self.learning_rate = tf.train.exponential_decay(learning_rate = FLAGS.max_learning_rate,
                                                     global_step =  self.global_step, 
-                                                    decay_steps = 25, 
-                                                    decay_rate = 0.93,
-                                                    staircase=False)
+                                                    decay_steps = 100, 
+                                                    decay_rate = 0.95,
+                                                    staircase=True)
+
+    tf.summary.scalar('learning_rate', self.learning_rate)
 
     self.learning_rate = tf.maximum(self.learning_rate, FLAGS.min_learning_rate)
     
@@ -58,9 +66,9 @@ class UGRNN(object):
       with tf.variable_scope(network_name) as scope:
         # Build a Graph that computes predictions from the inference model.
         model = network.Network(name = network_name,
-                                encoding_nn_hidden_size = self.nn1_hidden_size[i],
-                                encoding_nn_output_size = self.nn1_output_size[i],
-                                output_nn_hidden_size = self.nn2_hidden_size[i],
+                                encoding_nn_hidden_size = self.nn1_hidden_size[9],
+                                encoding_nn_output_size = self.nn1_output_size[9],
+                                output_nn_hidden_size = self.nn2_hidden_size[9],
                                 feature_pl = self.feature_pl,
                                 path_pl = self.path_pl,
                                 sequence_len = self.sequence_len_pl)
@@ -75,17 +83,8 @@ class UGRNN(object):
     step = (max_learning_rate - min_learning_rate) / FLAGS.max_epochs
     return math_ops.sub(max_learning_rate, math_ops.mul(step, tf.to_float(self.global_step)))
   
-  def train(self, dataset):
-    tf.scalar_summary("learning_rate", self.learning_rate)  
-    dataset.reset_epoch ()
-    while dataset.epochs_completed < 1:
-      feed_dict = self.fill_feed_dict(dataset)
-      _,l = self.sess.run([self.train_ops, self.learning_rate],feed_dict=feed_dict)
-
-    # print("Learning rate {:}".format(l))
+  
     
-    self.sess.run([self.global_step_update_op])
-
   '''
   Use the validation set to optimize select the top 10 networks with the minimum RMSE error
   '''
@@ -123,17 +122,17 @@ class UGRNN(object):
       return feed_dict
 
 def rmse(predictions, targets):
-  return np.sqrt(((predictions - targets) ** 2).mean()) 
+  return np.sqrt(((predictions - targets)**2).mean()) 
 
 def aae(predictions, targets):
   return np.abs(predictions - targets).mean()
 
 def rmse_loss(predictions, targets):
-  return tf.nn.l2_loss(predictions-targets, name=None)
+  return tf.nn.l2_loss(predictions-targets, name='l2_loss')
   # return tf.reduce_mean(tf.square(predictions-targets))
 
 def aae_loss(predictions, targets):
-  return tf.reduce_mean(tf.abs(predictions-targets))
+  return tf.reduce_sum(tf.abs(predictions-targets), name='l1_loss') 
 
 def main(_):
 
@@ -175,27 +174,39 @@ def main(_):
     data_sets = input_data.read_data_sets()
     
     print('Start Training')
-    
+    train_dataset = data_sets.train
     for epochs in xrange(0,FLAGS.max_epochs):
-      ugrnn_model.train(dataset=data_sets.train)
-      # summary = sess.run([summary_op])
+      train_dataset.reset_epoch ()
+      total_train_loss = 0
+      i = 0
+      for i in xrange(train_dataset.num_examples):
+        feed_dict = ugrnn_model.fill_feed_dict(train_dataset)
+        _, l, summary = sess.run([ugrnn_model.train_ops, ugrnn_model.loss_ops, summary_op],feed_dict=feed_dict)
+        # print(i,l)
+        total_train_loss += np.mean(l)
+
+
+      sess.run([ugrnn_model.global_step_update_op])
+
+      if loss_type is 'rmse':
+        total_train_loss = sqrt(total_train_loss)
+      train_loss = total_train_loss/data_sets.train.num_examples
+
+      # summary = sess.run(summary_op,feed_dict=feed_dict)
       # summary_writer.add_summary(summary,epochs)
-
-      if epochs % 10 == 0:
-        predictions = ugrnn_model.predict(data_sets.train)
-        fp = open("results",'w')
-        fp.write('\n'.join('%s %s' % x for x in zip(data_sets.train.labels, predictions)))
-        fp.close()
-        error1 = loss(data_sets.train.labels, predictions)
-
-        predictions = ugrnn_model.predict(data_sets.validation)
-        error2 = loss(data_sets.validation.labels, predictions)
+      # summary_writer.flush()
     
-        predictions = ugrnn_model.predict(data_sets.test)
-        error3 = loss(data_sets.test.labels, predictions)
+      plt.scatter(epochs, train_loss)
+      plt.pause(0.05)
 
-        print("Epoch: {:}, Train Loss: {:}, Validation Loss: {:} Test Loss {:}".format(epochs,error1,error2, error3))
+      if epochs % 50 == 0:
+        predictions = ugrnn_model.predict(data_sets.validation)
+        validation_loss = loss(data_sets.validation.labels, predictions)
 
+        print("Epoch: {:}, Train Loss: {:}, Validation Loss {:}".format(epochs,train_loss, validation_loss))
+      else:
+        print("Epoch: {:}, Train Loss: {:}".format(epochs, train_loss))
+      
     print('Training Finished')
     
 

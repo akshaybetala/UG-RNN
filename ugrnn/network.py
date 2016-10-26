@@ -8,6 +8,9 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.python.ops import array_ops
 
+
+
+
 """Builds the UGRNN network.
 
 Implements the inference/loss/training pattern for model building.
@@ -45,21 +48,22 @@ class Network(object):
                                         tf.zeros([max_seq_len*max_seq_len*4, encoding_nn_output_size],
                                           dtype=tf.float32))
 
-      with tf.variable_scope('input') as scope:
-        weights = tf.get_variable("weights",[encoding_nn_input_size, encoding_nn_hidden_size],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True
-          ,collections = ['WEIGHTS',tf.GraphKeys.VARIABLES])
       
-        biases = tf.get_variable("biases", [encoding_nn_hidden_size],
-          initializer=tf.constant_initializer(0.0),trainable=True)
+      with tf.variable_scope('hidden1') as scope:
+
+        weights = Network.weight_variable([encoding_nn_input_size, encoding_nn_hidden_size])
+        Network.variable_summaries(weights, scope.name + '/weights')
+        
+        biases = Network.bias_variable([encoding_nn_hidden_size])
+        Network.variable_summaries(weights, scope.name + '/biases')
     
-      with tf.variable_scope('hidden') as scope:
-        weights = tf.get_variable("weights",[encoding_nn_hidden_size,encoding_nn_output_size],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True,
-          collections = ['WEIGHTS', tf.GraphKeys.VARIABLES])
-      
-        biases = tf.get_variable("biases", [encoding_nn_output_size],
-          initializer=tf.constant_initializer(0.0), trainable=True)
+      with tf.variable_scope('output') as scope:
+        weights = Network.weight_variable([encoding_nn_hidden_size, encoding_nn_output_size])
+        Network.variable_summaries(weights, scope.name + '/weights')
+        
+        biases = Network.bias_variable([encoding_nn_output_size])
+        Network.variable_summaries(weights, scope.name + '/biases')
+
 
       _,step,_,_,_,contextual_features,_ = tf.while_loop(Network.cond, Network.body,
                                                       [sequence_len, step, feature_pl, path_pl, 
@@ -84,48 +88,71 @@ class Network(object):
       molecule_encoding = tf.expand_dims(tf.reduce_sum(encodings, 0),0)
 
     with tf.variable_scope("OutputNN") as scope:
-      with tf.variable_scope('input') as scope:
-        weights = tf.get_variable("weights",[encoding_nn_output_size, output_nn_hidden_size],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True,
-          collections = ['WEIGHTS' , tf.GraphKeys.VARIABLES])
-        
-        biases = tf.get_variable("biases", [output_nn_hidden_size],
-          initializer=tf.constant_initializer(0.0), trainable=True)
+      hidden1 = Network.nn_layer(input_tensor=molecule_encoding, 
+                                 input_dim=encoding_nn_output_size, 
+                                 output_dim=output_nn_hidden_size, 
+                                 layer_name='hidden1', 
+                                 act=tf.nn.relu)
 
-        hidden1 = tf.nn.relu(tf.matmul(molecule_encoding, weights) + biases)
+      self.prediction_op = Network.nn_layer(input_tensor=hidden1, 
+                                 input_dim=output_nn_hidden_size, 
+                                 output_dim=1, 
+                                 layer_name='output', 
+                                 act=None)
     
-      # with tf.variable_scope('hidden1') as scope:
-      #   weights = tf.get_variable("weights",[output_nn_hidden_size,output_nn_hidden_size],
-      #     initializer=tf.contrib.layers.xavier_initializer(), trainable=True ,
-      #     collections = ['WEIGHTS', tf.GraphKeys.VARIABLES])
-        
-      #   biases = tf.get_variable("biases", [output_nn_hidden_size],
-      #     initializer=tf.constant_initializer(0.0), trainable=True)
-      
-      #   hidden2 = tf.nn.relu(tf.matmul(hidden1, weights) + biases)
+  @staticmethod
+  def nn_layer(input_tensor, input_dim, output_dim, layer_name, act=tf.nn.relu):
+    """Reusable code for making a simple neural net layer.
+    It does a matrix multiply, bias add, and then uses relu to nonlinearize.
+    It also sets up name scoping so that the resultant graph is easy to read,
+    and adds a number of summary ops.
+    """
+    # Adding a name scope ensures logical grouping of the layers in the graph.
+    with tf.variable_scope(layer_name) as scope:
+      weights = Network.weight_variable([input_dim, output_dim])
+      Network.variable_summaries(weights, layer_name + '/weights')
+  
+      biases = Network.bias_variable([output_dim])
+      Network.variable_summaries(biases, layer_name + '/biases')
+  
+      preactivate = tf.matmul(input_tensor, weights) + biases
+      tf.histogram_summary(layer_name + '/pre_activations', preactivate)
+    
+      if act:
+        activations = act(preactivate, name='activation')
+        tf.histogram_summary(layer_name + '/activations', activations)
+        return activations
+      else:
+        return preactivate
 
-      with tf.variable_scope('hidden2') as scope:
-        weights = tf.get_variable("weights",[output_nn_hidden_size,1],
-          initializer=tf.contrib.layers.xavier_initializer(), trainable=True,
-          collections = ['WEIGHTS', tf.GraphKeys.VARIABLES])
-        
-        biases = tf.get_variable("biases", [1],
-          initializer=tf.constant_initializer(0.0), trainable=True)
-      
-        self.prediction_op = tf.matmul(hidden1, weights) + biases
-       
+  @staticmethod
+  def weight_variable(shape):
+    return tf.get_variable(name = "weights",
+                          shape = shape,
+                          initializer=tf.contrib.layers.xavier_initializer(), 
+                          trainable=True,
+                          collections = ['WEIGHTS', tf.GraphKeys.VARIABLES])
+
+  @staticmethod
+  def bias_variable(shape):
+    """Create a bias variable with appropriate initialization."""
+    return tf.get_variable(name = "biases",
+                           shape =shape,
+                           initializer=tf.constant_initializer(0.1), 
+                           trainable=True)
+
 
   @staticmethod
   def apply_EncodingNN(inputs):
-    with tf.variable_scope('input') as scope:
+    with tf.variable_scope('hidden1') as scope:
       weights = tf.get_variable("weights")
       biases = tf.get_variable("biases")
-      hidden = tf.nn.relu(tf.matmul(inputs, weights) + biases)
+      hidden1 = tf.nn.relu(tf.matmul(inputs, weights) + biases)
     
-    with tf.variable_scope('hidden') as scope:
+    with tf.variable_scope('output') as scope:
       weights = tf.get_variable("weights")
       biases = tf.get_variable("biases")
-      return tf.matmul(hidden, weights) + biases
+      return tf.nn.relu(tf.matmul(hidden1, weights) + biases)
 
   @staticmethod
   def cond(sequence_len, 
@@ -197,11 +224,11 @@ class Network(object):
         return None
 
 
-    # tf.scalar_summary(self.loss_op.op.name, self.loss_op)
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-    # optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.8, beta2=0.8, epsilon=1e-08, use_locking=False, name='Adam')
+    tf.scalar_summary(self.loss_op.op.name, self.loss_op)
+    # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08, use_locking=False, name='Adam')
 
-    loss_op = self.loss_op  
+    loss_op = self.loss_op 
           # FLAGS.weight_decay_rate*tf.add_n([tf.nn.l2_loss(weight) for weight in tf.get_collection(key = 'WEIGHTS', scope = self.name)])
 
     gvs = optimizer.compute_gradients(loss_op)
@@ -236,5 +263,15 @@ class Network(object):
     contextual_features = tf.scatter_add(contextual_features,indices,updates,use_locking=None)
     return contextual_features
 
-
-    
+  @staticmethod
+  def variable_summaries(var, name):
+    """Attach a lot of summaries to a Tensor."""
+    with tf.name_scope('summaries'):
+      mean = tf.reduce_mean(var)
+      tf.scalar_summary('mean/' + name, mean)
+      with tf.name_scope('stddev'):
+        stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+      tf.scalar_summary('stddev/' + name, stddev)
+      tf.scalar_summary('max/' + name, tf.reduce_max(var))
+      tf.scalar_summary('min/' + name, tf.reduce_min(var))
+      tf.histogram_summary(name, var)
