@@ -3,21 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-
 from ugrnn.molecule import Molecule
-
-"""Builds the UGRNN network.
-
-Implements the inference/loss/training pattern for model building.
-
-1. inference() - Builds the model as far as is required for running the network
-forward to make predictions.
-2. loss() - Adds to the inference model the layers required to generate loss.
-3. training() - Adds to the loss model the Ops required to generate and
-apply gradients.
-
-"""
-
 
 class Network(object):
     def __init__(self, name, encoding_nn_hidden_size, encoding_nn_output_size,
@@ -32,75 +18,79 @@ class Network(object):
         self.target_pl = target_pl
         self.loss_type = loss_type
         self.sequence_len = sequence_len
+        self.max_seq_len= max_seq_len
+        self.activation_type = activation_type
+        self.encoding_nn_hidden_size = encoding_nn_hidden_size
+        self.flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len * 4
+        self.encoding_nn_input_size = 4 * encoding_nn_output_size + Molecule.num_of_features()
+        self.learning_rate = learning_rate
 
-        self.activation_fun = Network.get_activation_fun(activation_type)
+        self.inference()
+        self.loss()
+        self.training()
 
-        flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len * 4
-        encoding_nn_input_size = 4 * encoding_nn_output_size + Molecule.num_of_features()
+    def inference(self):
 
         with tf.variable_scope("EncodingNN") as scope:
             step = tf.constant(0)
             contextual_features = tf.get_variable("contextual_features",
-                                                  [max_seq_len * max_seq_len * 4, encoding_nn_output_size],
+                                                  [self.max_seq_len * self.max_seq_len * 4, self.encoding_nn_output_size],
                                                   dtype=tf.float32,
                                                   initializer=tf.constant_initializer(0),
                                                   trainable=False)
 
             contextual_features = contextual_features.assign(
-                tf.zeros([max_seq_len * max_seq_len * 4, encoding_nn_output_size],
+                tf.zeros([self.max_seq_len * self.max_seq_len * 4, self.encoding_nn_output_size],
                          dtype=tf.float32))
 
             with tf.variable_scope('hidden1') as scope:
-                weights = Network.weight_variable([encoding_nn_input_size, encoding_nn_hidden_size])
+                weights = Network.weight_variable([self.encoding_nn_input_size, self.encoding_nn_hidden_size])
                 Network.variable_summaries(weights, scope.name + '/weights')
 
-                biases = Network.bias_variable([encoding_nn_hidden_size])
-                Network.variable_summaries(weights, scope.name + '/biases')
+                biases = Network.bias_variable([self.encoding_nn_hidden_size])
+                Network.variable_summaries(biases, scope.name + '/biases')
 
             with tf.variable_scope('output') as scope:
-                weights = Network.weight_variable([encoding_nn_hidden_size, encoding_nn_output_size])
+                weights = Network.weight_variable([self.encoding_nn_hidden_size, self.encoding_nn_output_size])
                 Network.variable_summaries(weights, scope.name + '/weights')
 
-                biases = Network.bias_variable([encoding_nn_output_size])
-                Network.variable_summaries(weights, scope.name + '/biases')
+                biases = Network.bias_variable([self.encoding_nn_output_size])
+                Network.variable_summaries(biases, scope.name + '/biases')
 
             _, step, _, _, _, contextual_features, _, _ = tf.while_loop(Network.cond, Network.body,
-                                                                        [sequence_len, step, feature_pl, path_pl,
-                                                                         flattened_idx_offset, contextual_features,
-                                                                         encoding_nn_output_size, activation_type],
+                                                                        [self.sequence_len, step, self.feature_pl, self.path_pl,
+                                                                         self.flattened_idx_offset, contextual_features,
+                                                                         self.encoding_nn_output_size, self.activation_type],
                                                                         back_prop=True,
                                                                         swap_memory=False, name=None)
 
             # use flattened indices1
             step_contextual_features = Network.get_contextual_feature(contextual_features=contextual_features,
                                                                       index=0,
-                                                                      flattened_idx_offset=flattened_idx_offset,
-                                                                      encoding_nn_output_size=encoding_nn_output_size)
+                                                                      flattened_idx_offset=self.flattened_idx_offset,
+                                                                      encoding_nn_output_size=self.encoding_nn_output_size)
 
             input_begin = tf.get_variable("input_begin", [3], dtype=tf.int32)
             input_begin = tf.scatter_update(input_begin, 1, step, use_locking=None)
-            step_feature = tf.squeeze(tf.slice(feature_pl, input_begin, [-1, 1, -1]), squeeze_dims=[1])
+            step_feature = tf.squeeze(tf.slice(self.feature_pl, input_begin, [-1, 1, -1]), squeeze_dims=[1])
 
             inputs = tf.concat(1, [step_contextual_features, step_feature])
-            encodings = Network.apply_EncodingNN(inputs, activation_type)
+            encodings = Network.apply_EncodingNN(inputs, self.activation_type)
 
             molecule_encoding = tf.expand_dims(tf.reduce_sum(encodings, 0), 0)
 
         with tf.variable_scope("OutputNN") as scope:
             hidden1 = Network.nn_layer(input_tensor=molecule_encoding,
-                                       input_dim=encoding_nn_output_size,
-                                       output_dim=output_nn_hidden_size,
+                                       input_dim=self.encoding_nn_output_size,
+                                       output_dim=self.output_nn_hidden_size,
                                        layer_name='hidden1',
-                                       act=self.activation_fun)
+                                       act=Network.get_activation_fun(self.activation_type))
 
             self.prediction_op = Network.nn_layer(input_tensor=hidden1,
-                                                  input_dim=output_nn_hidden_size,
+                                                  input_dim=self.output_nn_hidden_size,
                                                   output_dim=1,
                                                   layer_name='output',
                                                   act=tf.identity)
-
-        self.add_loss_ops()
-        self.add_training_ops(learning_rate)
 
     @staticmethod
     def get_activation_fun(activation_fun):
@@ -172,7 +162,7 @@ class Network(object):
                     encoding_nn_output_size,
                     activation_type)
 
-    def add_training_ops(self, learning_rate):
+    def training(self):
 
         def clip_gradient(gradient):
             if gradient is not None:
@@ -181,13 +171,13 @@ class Network(object):
                 return None
 
         # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08,
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08,
                                            use_locking=False, name='Adam')
         gvs = optimizer.compute_gradients(self.loss_op)
         capped_gvs = [(clip_gradient(grad), var) for grad, var in gvs]
         self.train_op = optimizer.apply_gradients(capped_gvs)
 
-    def add_loss_ops(self):
+    def loss(self):
 
         def rmse_loss(predictions, targets):
             return tf.nn.l2_loss(predictions - targets, name='l2_loss')
