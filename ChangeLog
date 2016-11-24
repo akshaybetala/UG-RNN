@@ -1,0 +1,34 @@
+CHANGES
+=======
+
+* Restructure network
+* Restructuring
+* Support for command line arguments
+* Refactoring
+* update hyper parameters
+* Minor changes
+* test file
+* bug fix
+* refactoring
+* 1. Updating input features. 2. Update weight decay
+* Rename Delaney_solubility.txt to Delaney_solubility.csv
+* restructuring
+* Add weight decay
+* fix typo
+* Updating hyper parameters
+* Restructuring
+* Bug Fixes
+* Update the model
+* restructuring
+* Restructuring
+* Basic model
+* Removing files
+* backup
+* temp code
+* adding code for rnn
+* create initial vectors
+* Changes
+* parse smiles
+* data parsing code
+* Adding previous code
+* Initial commit
