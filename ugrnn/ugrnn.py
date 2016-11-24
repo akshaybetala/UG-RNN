@@ -62,7 +62,7 @@ class UGRNN(object):
         self.learning_rate = tf.train.exponential_decay(learning_rate=FLAGS.learning_rate,
                                                         global_step=self.global_step,
                                                         decay_steps=100,
-                                                        decay_rate=.96,
+                                                        decay_rate=.95,
                                                         staircase=False)
 
         # self.learning_rate = tf.maximum(self.learning_rate, FLAGS.min_learning_rate)

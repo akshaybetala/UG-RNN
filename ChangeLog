@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Restructuring ugrnn file and input_data
 * Adding Authors and Changelog
 * 1. Ugrnn restructuring. 2. Enable cycle reduction in molecular graph
 * Restructure network
