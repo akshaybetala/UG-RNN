@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 from ugrnn.molecule import Molecule
+from ugrnn.loss import Loss
 
 class Network(object):
     def __init__(self, name, encoding_nn_hidden_size, encoding_nn_output_size,
@@ -179,18 +180,19 @@ class Network(object):
 
     def loss(self):
 
-        def rmse_loss(predictions, targets):
-            return tf.nn.l2_loss(predictions - targets, name='l2_loss')
-
-        def aae_loss(predictions, targets):
-            return tf.reduce_sum(tf.abs(predictions - targets), name='l1_loss')
-
-        if self.loss_type is 'aae':
-            self.loss_op = aae_loss(self.prediction_op, self.target_pl)
-        else:
-            self.loss_op = rmse_loss(self.prediction_op, self.target_pl)
-
-        tf.scalar_summary(self.loss_op.op.name, self.loss_op)
+        self.loss_op = Loss.get_loss_ops(loss_type=self.loss_type, predictions=self.prediction_op,targets = self.target_pl)
+        # def rmse_loss(predictions, targets):
+        #     return tf.nn.l2_loss(predictions - targets, name='l2_loss')
+        #
+        # def aae_loss(predictions, targets):
+        #     return tf.reduce_sum(tf.abs(predictions - targets), name='l1_loss')
+        #
+        # if self.loss_type is 'aae':
+        #     self.loss_op = aae_loss(self.prediction_op, self.target_pl)
+        # else:
+        #     self.loss_op = rmse_loss(self.prediction_op, self.target_pl)
+        #
+        # tf.scalar_summary(self.loss_op.op.name, self.loss_op)
 
     """
     Contextual vector is flatted array

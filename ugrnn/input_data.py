@@ -40,14 +40,15 @@ class DataSet(object):
     def index_in_epoch(self):
         return self._index_in_epoch
 
-    def reset_epoch(self):
+    def reset_epoch(self, permute=False):
         self._index_in_epoch = 0
         self._epochs_completed = 0
 
-        perm = np.arange(self._num_examples)
-        np.random.shuffle(perm)
-        self._molecules = self._molecules[perm]
-        self._labels = self._labels[perm]
+        if permute:
+            perm = np.arange(self._num_examples)
+            np.random.shuffle(perm)
+            self._molecules = self._molecules[perm]
+            self._labels = self._labels[perm]
 
     def next_molecule(self):
         # Return the next example from this data set.
@@ -62,15 +63,15 @@ class DataSet(object):
         return self._molecules[self._index_in_epoch - 1], self._labels[self._index_in_epoch - 1]
 
 
-def extract_molecules_from_smiles(SMILES):
+def extract_molecules_from_smiles(SMILES, contract_rings):
     size = len(SMILES)
     molecules = np.empty(size, dtype=object)
     for i in xrange(size):
-        molecules[i] = Molecule(SMILES[i])
+        molecules[i] = Molecule(SMILES[i], contract_rings)
     return molecules
 
 
-def read_data_sets(dataset_type='delaney'):
+def read_data_sets(dataset_type='delaney', contract_rings=False):
     class DataSets(object):
         pass
 
@@ -85,7 +86,7 @@ def read_data_sets(dataset_type='delaney'):
     with open(target_path) as f:
         prediction_targets = np.array([float(line.rstrip()) for line in f])
 
-    molecules = extract_molecules_from_smiles(smiles)
+    molecules = extract_molecules_from_smiles(smiles, contract_rings)
     num_examples = len(smiles)
 
     total_training_size = int(math.floor(0.9 * num_examples))
