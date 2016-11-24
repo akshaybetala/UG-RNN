@@ -1,8 +1,8 @@
 import tensorflow as tf
+import utils
 from Molecule import Molecule
 
 import network
-import utils
 
 flags = tf.app.flags
 FLAGS = flags.FLAGS

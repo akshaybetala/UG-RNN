@@ -2,8 +2,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import math
-
 import numpy as np
 from six.moves import xrange
 
@@ -45,10 +43,7 @@ class DataSet(object):
         self._epochs_completed = 0
 
         if permute:
-            perm = np.arange(self._num_examples)
-            np.random.shuffle(perm)
-            self._molecules = self._molecules[perm]
-            self._labels = self._labels[perm]
+            self._molecules, self._labels = permute_data(self._molecules, self._labels)
 
     def next_molecule(self):
         # Return the next example from this data set.
@@ -71,48 +66,66 @@ def extract_molecules_from_smiles(SMILES, contract_rings):
     return molecules
 
 
-def read_data_sets(dataset_type='delaney', contract_rings=False):
+def permute_data(data, labels):
+    data_len = len(data)
+    perm = np.arange(data_len)
+    np.random.shuffle(perm)
+    data_perm = data[perm]
+    labels_perm = labels[perm]
+    return data_perm, labels_perm
+
+
+def cross_validation_split(data, labels, crossval_split_index, crossval_total_num_splits, validation_data_ratio=0.1):
+    '''
+    Manages cross-validation splits given fixed lists of data/labels
+    <crossval_total_num_splits> directly affects the size of the test set ( it is <size of data-set>/crossval_total_num_splits)
+    Returns:
+    ----------
+        traindata, valdata, testdata
+
+    '''
+
+    assert validation_data_ratio > 0 and validation_data_ratio < 1
+    assert crossval_split_index < crossval_total_num_splits
+
+    N = len(data)
+    n_test = int(N * 1. / crossval_total_num_splits)
+    if crossval_split_index == crossval_total_num_splits - 1:
+        n_test = N - crossval_split_index * n_test
+
+    start_test = crossval_split_index * n_test
+    end_test = crossval_split_index * n_test + n_test
+    testdata = (data[start_test: end_test], labels[start_test: end_test])
+
+    rest_data = np.concatenate((data[:start_test], data[end_test:]), axis=0)
+    rest_labels = np.concatenate((labels[:start_test], labels[end_test:]), axis=0)
+
+    n_valid = int(N * validation_data_ratio)
+    valdata = (rest_data[: n_valid], rest_labels[: n_valid])
+    traindata = (rest_data[n_valid:], rest_labels[n_valid:])
+
+    return traindata, valdata, testdata
+
+
+def read_data_sets(dataset="delaney", contract_rings=False):
     class DataSets(object):
         pass
 
     data_sets = DataSets()
+    if dataset == "delaney":
+        smiles, labels = delaney.read_data_set()
 
-    smiles_path = delaney.smiles_path
-    target_path = delaney.target_path
-
-    with open(smiles_path) as f:
-        smiles = np.array([line.rstrip() for line in f])
-
-    with open(target_path) as f:
-        prediction_targets = np.array([float(line.rstrip()) for line in f])
-
+    smiles, labels = permute_data(smiles, labels)
     molecules = extract_molecules_from_smiles(smiles, contract_rings)
-    num_examples = len(smiles)
 
-    total_training_size = int(math.floor(0.9 * num_examples))
+    traindata, valdata, testdata = cross_validation_split(data=molecules,
+                                                          labels=labels,
+                                                          crossval_split_index=0,
+                                                          crossval_total_num_splits=10,
+                                                          validation_data_ratio=0.1)
 
-    total_train_molecules = molecules[:total_training_size]
-    total_train_labels = prediction_targets[:total_training_size]
-
-    test_molecules = molecules[total_training_size:]
-    test_labels = prediction_targets[total_training_size:]
-
-    # Now divide the total training in training and validation set
-    if num_examples > 100:
-        train_ratio = .8
-    else:
-        train_ratio = .85
-
-    train_size = int(train_ratio * total_training_size)
-
-    train_molecules = total_train_molecules[:train_size]
-    train_labels = total_train_labels[:train_size]
-
-    validation_molecules = total_train_molecules[train_size:]
-    validation_labels = total_train_labels[train_size:]
-
-    data_sets.train = DataSet(train_molecules, train_labels)
-    data_sets.validation = DataSet(validation_molecules, validation_labels)
-    data_sets.test = DataSet(test_molecules, test_labels)
+    data_sets.train = DataSet(traindata[0], traindata[1])
+    data_sets.validation = DataSet(valdata[0], valdata[1])
+    data_sets.test = DataSet(testdata[0], testdata[1])
 
     return data_sets

@@ -3,8 +3,10 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from ugrnn.molecule import Molecule
+
 from ugrnn.loss import Loss
+from ugrnn.molecule import Molecule
+
 
 class Network(object):
     def __init__(self, name, encoding_nn_hidden_size, encoding_nn_output_size,
@@ -19,7 +21,7 @@ class Network(object):
         self.target_pl = target_pl
         self.loss_type = loss_type
         self.sequence_len = sequence_len
-        self.max_seq_len= max_seq_len
+        self.max_seq_len = max_seq_len
         self.activation_type = activation_type
         self.encoding_nn_hidden_size = encoding_nn_hidden_size
         self.flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len * 4
@@ -35,7 +37,8 @@ class Network(object):
         with tf.variable_scope("EncodingNN") as scope:
             step = tf.constant(0)
             contextual_features = tf.get_variable("contextual_features",
-                                                  [self.max_seq_len * self.max_seq_len * 4, self.encoding_nn_output_size],
+                                                  [self.max_seq_len * self.max_seq_len * 4,
+                                                   self.encoding_nn_output_size],
                                                   dtype=tf.float32,
                                                   initializer=tf.constant_initializer(0),
                                                   trainable=False)
@@ -59,9 +62,11 @@ class Network(object):
                 Network.variable_summaries(biases, scope.name + '/biases')
 
             _, step, _, _, _, contextual_features, _, _ = tf.while_loop(Network.cond, Network.body,
-                                                                        [self.sequence_len, step, self.feature_pl, self.path_pl,
+                                                                        [self.sequence_len, step, self.feature_pl,
+                                                                         self.path_pl,
                                                                          self.flattened_idx_offset, contextual_features,
-                                                                         self.encoding_nn_output_size, self.activation_type],
+                                                                         self.encoding_nn_output_size,
+                                                                         self.activation_type],
                                                                         back_prop=True,
                                                                         swap_memory=False, name=None)
 
@@ -180,7 +185,8 @@ class Network(object):
 
     def loss(self):
 
-        self.loss_op = Loss.get_loss_ops(loss_type=self.loss_type, predictions=self.prediction_op,targets = self.target_pl)
+        self.loss_op = Loss.get_loss_ops(loss_type=self.loss_type, predictions=self.prediction_op,
+                                         targets=self.target_pl)
         # def rmse_loss(predictions, targets):
         #     return tf.nn.l2_loss(predictions - targets, name='l2_loss')
         #

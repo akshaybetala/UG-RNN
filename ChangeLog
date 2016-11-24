@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* Adding Authors and Changelog
+* 1. Ugrnn restructuring. 2. Enable cycle reduction in molecular graph
 * Restructure network
 * Restructuring
 * Support for command line arguments

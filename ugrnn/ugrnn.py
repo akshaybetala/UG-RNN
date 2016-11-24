@@ -4,13 +4,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import math
+import logging
 
 import numpy as np
-import logging
+
 from ugrnn import network, input_data
-from ugrnn.molecule import Molecule
 from ugrnn.loss import Loss
+from ugrnn.molecule import Molecule
 
 np.set_printoptions(threshold=np.inf)
 
@@ -46,7 +46,7 @@ class UGRNN(object):
                    (11, 3, 5),
                    (12, 3, 5)]
 
-    def __init__(self, sess):
+    def __init__(self, sess, train_dataset, validation_dataset):
         logger.info("Creating the Network")
 
         self.feature_pl = tf.placeholder(tf.float32, shape=[None, None, Molecule.num_of_features()])
@@ -56,6 +56,8 @@ class UGRNN(object):
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.global_step_update_op = tf.assign(self.global_step, tf.add(self.global_step, tf.constant(1)))
         self.no_of_models = 1
+        self.train_dataset = train_dataset
+        self.validation_dataset = validation_dataset
 
         self.learning_rate = tf.train.exponential_decay(learning_rate=FLAGS.learning_rate,
                                                         global_step=self.global_step,
@@ -116,26 +118,44 @@ class UGRNN(object):
             self.loss_ops.append(model.loss_op)
             self.train_ops.append(model.train_op)
 
-    def optimize(self, dataset):
-        n = UGRNN.num_of_networks
-        total_loss_values = np.zeros(n)
-        while dataset.epochs_completed < 1:
-            feed_dict = self.fill_feed_dict(dataset)
+    def get_learning_rate(self):
+        return self.sess.run([self.learning_rate])
+
+    def optimize(self):
+        logger.info('Optimize network')
+        logger.info('No of of models {:}'.format(self.no_of_models))
+        self.no_of_best_models = int(self.no_of_models / 2)
+        total_loss_values = np.zeros(self.no_of_models)
+        while self.validation_dataset.epochs_completed < 1:
+            feed_dict = self.fill_feed_dict(self.validation_dataset)
             loss_values, prediction_values = self.sess.run([self.loss_ops, self.prediction_ops],
                                                            feed_dict=feed_dict)
             total_loss_values += np.array(loss_values)
-
-        # Get the 10 netowrks with minimum error
-        index_of_best_networks = total_loss_values.argsort()[int(-n / 2):]
+        index_of_best_networks = total_loss_values.argsort()[-self.no_of_best_models:]
         self.prediction_ops = [self.prediction_ops[index] for index in index_of_best_networks]
 
-    def train(self, dataset, epochs=1):
-        for epoch in xrange(epochs):
-            dataset.reset_epoch()
-            for i in xrange(dataset.num_examples):
-                feed_dict = self.fill_feed_dict(dataset)
+    def train(self, epochs=1):
+        plt.axis([0, FLAGS.max_epochs, 0, 4])
+        plt.ion()
+        logger.info('Start Training')
+        for epoch in xrange(0, epochs):
+
+            self.train_dataset.reset_epoch(permute=True)
+            for i in xrange(self.train_dataset.num_examples):
+                feed_dict = self.fill_feed_dict(self.train_dataset)
                 _ = self.sess.run([self.train_ops], feed_dict=feed_dict)
             self.sess.run([self.global_step_update_op])
+
+            if epoch % 5 == 0:
+                train_error = self.loss(self.train_dataset)
+                validation_error = self.loss(self.validation_dataset)
+                plt.scatter(epoch, train_error)
+                learning_rate = self.get_learning_rate()
+                plt.pause(0.05)
+                logger.info("Epoch: {:}, Learning rate {:} Train Loss: {:}, Validation Loss {:}".
+                            format(epoch, learning_rate, train_error, validation_error))
+
+        logger.info('Training Finished')
 
     def loss(self, dataset):
         predictions = self.predict(dataset)
@@ -143,19 +163,13 @@ class UGRNN(object):
         error = Loss.get_error(FLAGS.loss_type, predictions, tragets)
         return error
 
-    def get_learning_rate(self):
-        return self.sess.run([self.learning_rate])
-
     def predict(self, dataset):
         dataset.reset_epoch()
         predictions = []
-        i=0
         while dataset.epochs_completed < 1:
             feed_dict = self.fill_feed_dict(dataset)
             prediction_values = self.sess.run([self.prediction_ops], feed_dict=feed_dict)
             predictions.append(np.mean(prediction_values))
-            # print(i, prediction_values)
-            i+=1
 
         return np.array(predictions)
 
@@ -175,41 +189,23 @@ def main(_):
         # Create a session for running Ops on the Graph.
         sess = tf.Session()
 
-        logger.info("Creating Graph.")
-        ugrnn_model = UGRNN(sess=sess)
-        logger.info("Succesfully created graph.")
-
-        logger.info('Run the Op to initialize the variables')
-        init = tf.initialize_all_variables()
-        sess.run(init)
-
         logger.info('Loading {:} dataset'.format(FLAGS.dataset))
         logger.info('Contract Rings: {:}'.format(FLAGS.contract_rings))
 
-        data_sets = input_data.read_data_sets(FLAGS.dataset, FLAGS.contract_rings )
+        data_sets = input_data.read_data_sets(FLAGS.dataset, FLAGS.contract_rings)
         train_dataset = data_sets.train
         validation_dataset = data_sets.validation
         test_dataset = data_sets.test
 
-        logger.info('Start Training')
+        logger.info("Creating Graph.")
+        ugrnn_model = UGRNN(sess=sess, train_dataset=train_dataset, validation_dataset=validation_dataset)
+        logger.info("Succesfully created graph.")
+        logger.info('Run the Op to initialize the variables')
+        init = tf.initialize_all_variables()
+        sess.run(init)
 
-        for epoch in xrange(0, FLAGS.max_epochs):
-            ugrnn_model.train(train_dataset)
-            if epoch % 1 == 0:
-                train_error = ugrnn_model.loss(train_dataset)
-                validation_error = ugrnn_model.loss(validation_dataset)
-                plt.scatter(epoch, train_error)
-                learning_rate = ugrnn_model.get_learning_rate()
-                plt.pause(0.05)
-                logger.info(
-                    "Epoch: {:}, Learning rate {:} Train Loss: {:}, Validation Loss {:}".format(epoch, learning_rate,
-                                                                                                train_error,
-                                                                                                validation_error))
-
-        logger.info('Training Finished')
-
-        logger.info('Optimize network')
-        ugrnn_model.optimize(data_sets.validation)
+        ugrnn_model.train(epochs=FLAGS.max_epochs)
+        ugrnn_model.optimize()
         predictions = ugrnn_model.predict(test_dataset)
         error = Loss.get_error(FLAGS.loss_type, test_dataset.labels, predictions)
         logger.info("Loss: {:}".format(error))
@@ -266,6 +262,4 @@ if __name__ == '__main__':
     parser.set_defaults(contract_rings=False)
 
     FLAGS = parser.parse_args()
-    plt.axis([0, FLAGS.max_epochs, 0, 4])
-    plt.ion()
     tf.app.run()
