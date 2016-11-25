@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-
+import os
 import numpy as np
 
 from ugrnn import network, input_data
@@ -148,7 +148,7 @@ class UGRNN(object):
 
             if epoch % 5 == 0:
                 train_error = self.loss(self.train_dataset)
-                validation_error = self.loss(self.validation_dataset)
+                validation_error = self.loss(self.validation_dataset, write_result=True)
                 plt.scatter(epoch, train_error)
                 learning_rate = self.get_learning_rate()
                 plt.pause(0.05)
@@ -157,11 +157,20 @@ class UGRNN(object):
 
         logger.info('Training Finished')
 
-    def loss(self, dataset):
+    def loss(self, dataset, write_result=False):
         predictions = self.predict(dataset)
         tragets = dataset.labels
         error = Loss.get_error(FLAGS.loss_type, predictions, tragets)
+        if write_result:
+            self.write_result(predictions, tragets)
         return error
+
+    def write_result(self, predictions, targets):
+        f = open(self.get_file_path(), 'w+')
+        data = np.array([predictions, targets])
+        data = data.T
+        np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'], header="Prediction, Target")
+        f.close()
 
     def predict(self, dataset):
         dataset.reset_epoch()
@@ -170,8 +179,18 @@ class UGRNN(object):
             feed_dict = self.fill_feed_dict(dataset)
             prediction_values = self.sess.run([self.prediction_ops], feed_dict=feed_dict)
             predictions.append(np.mean(prediction_values))
-
         return np.array(predictions)
+
+    def get_file_path(self):
+        path = os.path.dirname(os.path.realpath(__file__))
+        graph_type = "UG_RNN_CN" if FLAGS.contract_rings else "UG_RNN"
+        folder = "results/model_{}/{}".format(FLAGS.model_no,graph_type)
+        folder_path = os.path.join(path, folder)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        file_path = os.path.join(folder_path, "result_{}.txt".format(FLAGS.loss_type))
+        return file_path
+
 
     def fill_feed_dict(self, dataset):
         molecules_feed, targets_feed = dataset.next_molecule()
