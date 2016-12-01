@@ -21,11 +21,11 @@ class Loss(object):
 
     @staticmethod
     def rmse_loss_ops(predictions, targets):
-        return tf.nn.l2_loss(tf.sub(predictions, targets)) / 2
+        return tf.nn.l2_loss(tf.sub(predictions, targets)) / 8
 
     @staticmethod
     def aae_loss_ops(predictions, targets):
-        return tf.reduce_sum(tf.abs(predictions - targets), name='l1_loss') / 2
+        return tf.reduce_sum(tf.abs(predictions - targets), name='l1_loss') / 4
 
     @staticmethod
     def get_error(loss_type, predictions, targets):

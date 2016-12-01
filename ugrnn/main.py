@@ -99,7 +99,13 @@ class UGRNN(object):
             self.add_model(model_name, encoding_nn_hidden_size, encoding_nn_output_size, output_nn_hidden_size)
 
     def add_model(self, model_name, encoding_nn_hidden_size, encoding_nn_output_size, output_nn_hidden_size):
-
+        '''
+        :param model_name:
+        :param encoding_nn_hidden_size:
+        :param encoding_nn_output_size:
+        :param output_nn_hidden_size:
+        :return:
+        '''
         with tf.variable_scope(model_name) as scope:
             # Build a Graph that computes predictions from the inference model.
             model = network.Network(name=model_name,
@@ -122,6 +128,9 @@ class UGRNN(object):
         return self.sess.run([self.learning_rate])
 
     def optimize(self):
+        '''
+        :return:
+        '''
         logger.info('Optimize network')
         logger.info('No of of models {:}'.format(self.no_of_models))
         self.no_of_best_models = int(self.no_of_models / 2)
@@ -135,6 +144,10 @@ class UGRNN(object):
         self.prediction_ops = [self.prediction_ops[index] for index in index_of_best_networks]
 
     def train(self, epochs=1):
+        '''
+        :param epochs:
+        :return:
+        '''
         plt.axis([0, FLAGS.max_epochs, 0, 4])
         plt.ion()
         logger.info('Start Training')
@@ -148,8 +161,9 @@ class UGRNN(object):
 
             if epoch % 5 == 0:
                 train_error = self.loss(self.train_dataset)
-                validation_error = self.loss(self.validation_dataset, write_result=True)
-                plt.scatter(epoch, train_error)
+                validation_error = self.loss(self.validation_dataset, write_result=False)
+                plt.scatter(epoch, train_error, color='r')
+                plt.scatter(epoch, validation_error, color='b')
                 learning_rate = self.get_learning_rate()
                 plt.pause(0.05)
                 logger.info("Epoch: {:}, Learning rate {:} Train Loss: {:}, Validation Loss {:}".
@@ -158,6 +172,11 @@ class UGRNN(object):
         logger.info('Training Finished')
 
     def loss(self, dataset, write_result=False):
+        '''
+        :param dataset:
+        :param write_result:
+        :return:
+        '''
         predictions = self.predict(dataset)
         tragets = dataset.labels
         error = Loss.get_error(FLAGS.loss_type, predictions, tragets)
@@ -166,6 +185,11 @@ class UGRNN(object):
         return error
 
     def write_result(self, predictions, targets):
+        '''
+        :param predictions:
+        :param targets:
+        :return:
+        '''
         f = open(self.get_file_path(), 'w+')
         data = np.array([predictions, targets])
         data = data.T
@@ -173,6 +197,10 @@ class UGRNN(object):
         f.close()
 
     def predict(self, dataset):
+        '''
+        :param dataset:
+        :return:
+        '''
         dataset.reset_epoch()
         predictions = []
         while dataset.epochs_completed < 1:
@@ -182,6 +210,9 @@ class UGRNN(object):
         return np.array(predictions)
 
     def get_file_path(self):
+        '''
+        :return:
+        '''
         path = os.path.dirname(os.path.realpath(__file__))
         graph_type = "UG_RNN_CN" if FLAGS.contract_rings else "UG_RNN"
         folder = "results/model_{}/{}".format(FLAGS.model_no, graph_type)

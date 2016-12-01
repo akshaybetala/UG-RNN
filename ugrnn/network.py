@@ -38,7 +38,9 @@ class Network(object):
         self.training()
 
     def inference(self):
-
+        '''
+        :return:
+        '''
         with tf.variable_scope("EncodingNN") as scope:
             step = tf.constant(0)
             contextual_features = tf.get_variable("contextual_features",
@@ -108,6 +110,10 @@ class Network(object):
 
     @staticmethod
     def get_activation_fun(activation_fun):
+        '''
+        :param activation_fun:
+        :return:
+        '''
         logging.info("Activation fun {:}".format(activation_fun))
         if activation_fun == 'tanh':
             return tf.nn.tanh
@@ -125,6 +131,10 @@ class Network(object):
 
     @staticmethod
     def get_initializer(initializer):
+        '''
+        :param initializer:
+        :return:
+        '''
         if initializer == 'xavier':
             logging.info("Weight Initializer:{}".format(initializer))
             return tf.contrib.layers.xavier_initializer
@@ -152,7 +162,16 @@ class Network(object):
              flattened_idx_offset,
              contextual_features,
              encoding_nn_output_size):
-
+        '''
+        :param sequence_len:
+        :param step:
+        :param feature_pl:
+        :param path_pl:
+        :param flattened_idx_offset:
+        :param contextual_features:
+        :param encoding_nn_output_size:
+        :return:
+        '''
         input_begin = tf.get_variable("input_begin", [3], dtype=tf.int32, initializer=tf.constant_initializer(0),
                                       trainable=False)
         input_begin = tf.scatter_update(input_begin, 1, step, use_locking=None)
@@ -195,7 +214,9 @@ class Network(object):
                     encoding_nn_output_size)
 
     def training(self):
-
+        '''
+        :return:
+        '''
         def clip_gradient(gradient):
             if gradient is not None:
                 return tf.mul(tf.clip_by_value(tf.abs(grad), 0.1, 1.), tf.sign(grad))
@@ -215,6 +236,13 @@ class Network(object):
 
     @staticmethod
     def get_contextual_feature(contextual_features, index, flattened_idx_offset, encoding_nn_output_size):
+        '''
+        :param contextual_features:
+        :param index:
+        :param flattened_idx_offset:
+        :param encoding_nn_output_size:
+        :return:
+        '''
         """
             Contextual vector is flatted array
             index is 1D index with
@@ -230,6 +258,13 @@ class Network(object):
 
     @staticmethod
     def update_contextual_features(contextual_features, indices, updates, flattened_idx_offset):
+        '''
+        :param contextual_features:
+        :param indices:
+        :param updates:
+        :param flattened_idx_offset:
+        :return:
+        '''
         first_indices, second_indices = tf.split(1, 2, indices)
         indices = tf.squeeze(first_indices + second_indices)
         indices = indices + flattened_idx_offset
@@ -238,6 +273,15 @@ class Network(object):
 
     @staticmethod
     def nn_layer(input_tensor, input_dim, output_dim, layer_name, act, initializer):
+        '''
+        :param input_tensor:
+        :param input_dim:
+        :param output_dim:
+        :param layer_name:
+        :param act:
+        :param initializer:
+        :return:
+        '''
         """Reusable code for making a simple neural net layer.
         It does a matrix multiply, bias add, and then uses relu to nonlinearize.
         It also sets up name scoping so that the resultant graph is easy to read,

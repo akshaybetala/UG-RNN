@@ -43,7 +43,9 @@ class Molecule:
             return []
 
     def reduce_graph_rings(self):
-
+        '''
+        :return:
+        '''
         cycle_name_format = "R_{:}"
         index = 0
         cycle = self.get_cycle()
@@ -82,6 +84,9 @@ class Molecule:
         self.no_of_atoms = len(self.graph)
 
     def create_directed_graphs(self):
+        '''
+        :return:
+        '''
         self.directed_graphs = np.empty((self.no_of_atoms, self.no_of_atoms - 1, 3), dtype=int)
 
         # parse all the atoms one by one and get directed graph to that atom
@@ -112,6 +117,9 @@ class Molecule:
             self.directed_graphs[idx, :, :] = sorted_path
 
     def create_feature_vectors(self):
+        '''
+        :return:
+        '''
         # create a three dimesnional matrix G, such that Gij is the contextual vector for ith vertex in jth DAG
         self.feature_vector = np.zeros((self.no_of_atoms, self.no_of_atoms, Molecule.num_of_features()))
 
