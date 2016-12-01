@@ -2,16 +2,22 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import logging
+
 import tensorflow as tf
 
 from ugrnn.loss import Loss
 from ugrnn.molecule import Molecule
 
+logger = logging.getLogger(__name__)
+
+FLAGS = None
+
 
 class Network(object):
     def __init__(self, name, encoding_nn_hidden_size, encoding_nn_output_size,
-                 output_nn_hidden_size, activation_type, loss_type, max_seq_len,
-                 feature_pl, path_pl, sequence_len, target_pl, learning_rate):
+                 output_nn_hidden_size, max_seq_len, feature_pl, path_pl, sequence_len,
+                 target_pl, learning_rate, initializer):
         """Build the ugrnn model up to where it may be used for inference."""
         self.name = name
         self.encoding_nn_output_size = encoding_nn_output_size
@@ -19,14 +25,13 @@ class Network(object):
         self.feature_pl = feature_pl
         self.path_pl = path_pl
         self.target_pl = target_pl
-        self.loss_type = loss_type
         self.sequence_len = sequence_len
         self.max_seq_len = max_seq_len
-        self.activation_type = activation_type
         self.encoding_nn_hidden_size = encoding_nn_hidden_size
         self.flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len * 4
         self.encoding_nn_input_size = 4 * encoding_nn_output_size + Molecule.num_of_features()
         self.learning_rate = learning_rate
+        self.initializer_fun = Network.get_initializer(initializer)
 
         self.inference()
         self.loss()
@@ -48,27 +53,28 @@ class Network(object):
                          dtype=tf.float32))
 
             with tf.variable_scope('hidden1') as scope:
-                weights = Network.weight_variable([self.encoding_nn_input_size, self.encoding_nn_hidden_size])
+                weights = Network.weight_variable([self.encoding_nn_input_size, self.encoding_nn_hidden_size],
+                                                  initializer=self.initializer_fun)
                 Network.variable_summaries(weights, scope.name + '/weights')
 
                 biases = Network.bias_variable([self.encoding_nn_hidden_size])
                 Network.variable_summaries(biases, scope.name + '/biases')
 
             with tf.variable_scope('output') as scope:
-                weights = Network.weight_variable([self.encoding_nn_hidden_size, self.encoding_nn_output_size])
+                weights = Network.weight_variable([self.encoding_nn_hidden_size, self.encoding_nn_output_size],
+                                                  initializer=self.initializer_fun)
                 Network.variable_summaries(weights, scope.name + '/weights')
 
                 biases = Network.bias_variable([self.encoding_nn_output_size])
                 Network.variable_summaries(biases, scope.name + '/biases')
 
-            _, step, _, _, _, contextual_features, _, _ = tf.while_loop(Network.cond, Network.body,
-                                                                        [self.sequence_len, step, self.feature_pl,
-                                                                         self.path_pl,
-                                                                         self.flattened_idx_offset, contextual_features,
-                                                                         self.encoding_nn_output_size,
-                                                                         self.activation_type],
-                                                                        back_prop=True,
-                                                                        swap_memory=False, name=None)
+            _, step, _, _, _, contextual_features, _ = tf.while_loop(Network.cond, Network.body,
+                                                                     [self.sequence_len, step, self.feature_pl,
+                                                                      self.path_pl,
+                                                                      self.flattened_idx_offset, contextual_features,
+                                                                      self.encoding_nn_output_size],
+                                                                     back_prop=True,
+                                                                     swap_memory=False, name=None)
 
             # use flattened indices1
             step_contextual_features = Network.get_contextual_feature(contextual_features=contextual_features,
@@ -81,7 +87,7 @@ class Network(object):
             step_feature = tf.squeeze(tf.slice(self.feature_pl, input_begin, [-1, 1, -1]), squeeze_dims=[1])
 
             inputs = tf.concat(1, [step_contextual_features, step_feature])
-            encodings = Network.apply_EncodingNN(inputs, self.activation_type)
+            encodings = Network.apply_EncodingNN(inputs, FLAGS.activation_type)
 
             molecule_encoding = tf.expand_dims(tf.reduce_sum(encodings, 0), 0)
 
@@ -90,20 +96,43 @@ class Network(object):
                                        input_dim=self.encoding_nn_output_size,
                                        output_dim=self.output_nn_hidden_size,
                                        layer_name='hidden1',
-                                       act=Network.get_activation_fun(self.activation_type))
+                                       act=Network.get_activation_fun(FLAGS.activation_type),
+                                       initializer=self.initializer_fun)
 
             self.prediction_op = Network.nn_layer(input_tensor=hidden1,
                                                   input_dim=self.output_nn_hidden_size,
                                                   output_dim=1,
                                                   layer_name='output',
-                                                  act=tf.identity)
+                                                  act=tf.identity,
+                                                  initializer=self.initializer_fun)
 
     @staticmethod
     def get_activation_fun(activation_fun):
-        if activation_fun is 'tanh':
+        logging.info("Activation fun {:}".format(activation_fun))
+        if activation_fun == 'tanh':
             return tf.nn.tanh
-        else:
+        elif activation_fun == 'relu6':
+            return tf.nn.relu6
+        elif activation_fun == 'crelu':
+            return tf.nn.crelu
+        elif activation_fun == 'relu':
             return tf.nn.relu
+        elif activation_fun == 'identity':
+            logging.info("Activation fun {:}".format(activation_fun))
+            return tf.identity
+        else:
+            raise Exception("Inavlid activation function {}".format(activation_fun))
+
+    @staticmethod
+    def get_initializer(initializer):
+        if initializer == 'xavier':
+            logging.info("Weight Initializer:{}".format(initializer))
+            return tf.contrib.layers.xavier_initializer
+        elif initializer == 'one':
+            logging.info("Weight Initializer:{}".format(initializer))
+            return tf.ones_initializer
+        else:
+            raise Exception("Inavlid initializer{}".format(initializer))
 
     @staticmethod
     def cond(sequence_len,
@@ -112,8 +141,7 @@ class Network(object):
              path_pl,
              flattened_idx_offset,
              contextual_features,
-             encoding_nn_output_size,
-             activation_type):
+             encoding_nn_output_size):
         return tf.less(step, sequence_len - 1)
 
     @staticmethod
@@ -123,8 +151,7 @@ class Network(object):
              path_pl,
              flattened_idx_offset,
              contextual_features,
-             encoding_nn_output_size,
-             activation_type):
+             encoding_nn_output_size):
 
         input_begin = tf.get_variable("input_begin", [3], dtype=tf.int32, initializer=tf.constant_initializer(0),
                                       trainable=False)
@@ -150,7 +177,7 @@ class Network(object):
                                                                   encoding_nn_output_size=encoding_nn_output_size)
 
         nn_inputs = tf.concat(1, [step_contextual_features, step_feature])
-        updated_contextual_vectors = Network.apply_EncodingNN(nn_inputs, activation_type)
+        updated_contextual_vectors = Network.apply_EncodingNN(nn_inputs, FLAGS.activation_type)
         output_idx = tf.squeeze(tf.slice(path_pl, output_begin, [-1, 1, 2]))
 
         contextual_features = Network.update_contextual_features(contextual_features=contextual_features,
@@ -165,8 +192,7 @@ class Network(object):
                     path_pl,
                     flattened_idx_offset,
                     contextual_features,
-                    encoding_nn_output_size,
-                    activation_type)
+                    encoding_nn_output_size)
 
     def training(self):
 
@@ -184,29 +210,15 @@ class Network(object):
         self.train_op = optimizer.apply_gradients(capped_gvs)
 
     def loss(self):
-
-        self.loss_op = Loss.get_loss_ops(loss_type=self.loss_type, predictions=self.prediction_op,
+        self.loss_op = Loss.get_loss_ops(loss_type=FLAGS.loss_type, predictions=self.prediction_op,
                                          targets=self.target_pl)
-        # def rmse_loss(predictions, targets):
-        #     return tf.nn.l2_loss(predictions - targets, name='l2_loss')
-        #
-        # def aae_loss(predictions, targets):
-        #     return tf.reduce_sum(tf.abs(predictions - targets), name='l1_loss')
-        #
-        # if self.loss_type is 'aae':
-        #     self.loss_op = aae_loss(self.prediction_op, self.target_pl)
-        # else:
-        #     self.loss_op = rmse_loss(self.prediction_op, self.target_pl)
-        #
-        # tf.scalar_summary(self.loss_op.op.name, self.loss_op)
-
-    """
-    Contextual vector is flatted array
-    index is 1D index with
-    """
 
     @staticmethod
     def get_contextual_feature(contextual_features, index, flattened_idx_offset, encoding_nn_output_size):
+        """
+            Contextual vector is flatted array
+            index is 1D index with
+        """
         indices = index + flattened_idx_offset
         values = [indices, indices, indices, indices]
         indices = tf.pack(values, axis=1, name='pack')
@@ -225,7 +237,7 @@ class Network(object):
         return contextual_features
 
     @staticmethod
-    def nn_layer(input_tensor, input_dim, output_dim, layer_name, act):
+    def nn_layer(input_tensor, input_dim, output_dim, layer_name, act, initializer):
         """Reusable code for making a simple neural net layer.
         It does a matrix multiply, bias add, and then uses relu to nonlinearize.
         It also sets up name scoping so that the resultant graph is easy to read,
@@ -233,7 +245,7 @@ class Network(object):
         """
         # Adding a name scope ensures logical grouping of the layers in the graph.
         with tf.variable_scope(layer_name) as scope:
-            weights = Network.weight_variable([input_dim, output_dim])
+            weights = Network.weight_variable([input_dim, output_dim], initializer)
             Network.variable_summaries(weights, layer_name + '/weights')
 
             biases = Network.bias_variable([output_dim])
@@ -248,19 +260,18 @@ class Network(object):
             return activations
 
     @staticmethod
-    def weight_variable(shape):
+    def weight_variable(shape, initializer):
         return tf.get_variable(name="weights",
                                shape=shape,
-                               initializer=tf.contrib.layers.xavier_initializer(),
-                               trainable=True,
-                               collections=['WEIGHTS', tf.GraphKeys.VARIABLES])
+                               initializer=initializer(),
+                               trainable=True)
 
     @staticmethod
     def bias_variable(shape):
         """Create a bias variable with appropriate initialization."""
         return tf.get_variable(name="biases",
                                shape=shape,
-                               initializer=tf.constant_initializer(0.1),
+                               initializer=tf.constant_initializer(0),
                                trainable=True)
 
     @staticmethod

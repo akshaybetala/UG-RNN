@@ -16,14 +16,16 @@ class Loss(object):
             return Loss.rmse_loss_ops(predictions, targets)
         elif loss_type == 'aae':
             return Loss.aae_loss_ops(predictions, targets)
+        else:
+            raise Exception("Invalid Loss type {}".format(loss_type))
 
     @staticmethod
     def rmse_loss_ops(predictions, targets):
-        return tf.sqrt(tf.reduce_mean(tf.square(tf.sub(predictions, targets))))
+        return tf.nn.l2_loss(tf.sub(predictions, targets)) / 2
 
     @staticmethod
     def aae_loss_ops(predictions, targets):
-        return tf.reduce_sum(tf.abs(predictions - targets), name='l1_loss')
+        return tf.reduce_sum(tf.abs(predictions - targets), name='l1_loss') / 2
 
     @staticmethod
     def get_error(loss_type, predictions, targets):
@@ -38,6 +40,8 @@ class Loss(object):
             return Loss.rmse(predictions, targets)
         elif loss_type == 'aae':
             return Loss.aae(predictions, targets)
+        else:
+            raise Exception("Invalid Loss type {}".format(loss_type))
 
     @staticmethod
     def rmse(predictions, targets):

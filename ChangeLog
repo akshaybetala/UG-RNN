@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Adding results folder
 * Update loss function for rmse
 * Restructuring ugrnn file and input_data
 * Adding Authors and Changelog

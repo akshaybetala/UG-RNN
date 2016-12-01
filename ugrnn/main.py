@@ -6,6 +6,7 @@ from __future__ import print_function
 
 import logging
 import os
+
 import numpy as np
 
 from ugrnn import network, input_data
@@ -110,9 +111,8 @@ class UGRNN(object):
                                     target_pl=self.target_pl,
                                     sequence_len=self.sequence_len_pl,
                                     learning_rate=self.learning_rate,
-                                    loss_type=FLAGS.loss_type,
-                                    activation_type=FLAGS.activation_fun,
-                                    max_seq_len=FLAGS.max_seq_len)
+                                    max_seq_len=FLAGS.max_seq_len,
+                                    initializer="xavier")
 
             self.prediction_ops.append(model.prediction_op)
             self.loss_ops.append(model.loss_op)
@@ -184,13 +184,12 @@ class UGRNN(object):
     def get_file_path(self):
         path = os.path.dirname(os.path.realpath(__file__))
         graph_type = "UG_RNN_CN" if FLAGS.contract_rings else "UG_RNN"
-        folder = "results/model_{}/{}".format(FLAGS.model_no,graph_type)
+        folder = "results/model_{}/{}".format(FLAGS.model_no, graph_type)
         folder_path = os.path.join(path, folder)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         file_path = os.path.join(folder_path, "result_{}.txt".format(FLAGS.loss_type))
         return file_path
-
 
     def fill_feed_dict(self, dataset):
         molecules_feed, targets_feed = dataset.next_molecule()
@@ -220,7 +219,7 @@ def main(_):
         ugrnn_model = UGRNN(sess=sess, train_dataset=train_dataset, validation_dataset=validation_dataset)
         logger.info("Succesfully created graph.")
         logger.info('Run the Op to initialize the variables')
-        init = tf.initialize_all_variables()
+        init =tf.global_variables_initializer()
         sess.run(init)
 
         ugrnn_model.train(epochs=FLAGS.max_epochs)
@@ -255,7 +254,7 @@ if __name__ == '__main__':
     parser.add_argument('--loss_type', type=str, default='rmse',
                         help='The loss function used for training')
 
-    parser.add_argument('--activation_fun', type=str, default='relu',
+    parser.add_argument('--activation_type', type=str, default='relu',
                         help='Summaries directory')
 
     parser.add_argument('--dataset', type=str, default='delaney',
@@ -281,4 +280,5 @@ if __name__ == '__main__':
     parser.set_defaults(contract_rings=False)
 
     FLAGS = parser.parse_args()
+    network.FLAGS = FLAGS
     tf.app.run()
