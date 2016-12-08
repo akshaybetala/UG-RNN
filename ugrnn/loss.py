@@ -21,7 +21,7 @@ class Loss(object):
 
     @staticmethod
     def rmse_loss_ops(predictions, targets):
-        return tf.nn.l2_loss(tf.sub(predictions, targets)) / 8
+        return tf.sqrt(tf.reduce_mean(tf.square(tf.sub(targets, predictions))))/5
 
     @staticmethod
     def aae_loss_ops(predictions, targets):

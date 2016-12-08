@@ -35,7 +35,7 @@ class Network(object):
 
         self.inference()
         self.loss()
-        self.training()
+        self.training(FLAGS.clip_gradient)
 
     def inference(self):
         '''
@@ -213,22 +213,25 @@ class Network(object):
                     contextual_features,
                     encoding_nn_output_size)
 
-    def training(self):
+    def training(self, clip_gradient=True):
         '''
         :return:
         '''
-        def clip_gradient(gradient):
+        def apply_gradient_clipping(gradient):
             if gradient is not None:
                 return tf.mul(tf.clip_by_value(tf.abs(grad), 0.1, 1.), tf.sign(grad))
             else:
                 return None
 
-        # optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08,
-                                           use_locking=False, name='Adam')
-        gvs = optimizer.compute_gradients(self.loss_op)
-        capped_gvs = [(clip_gradient(grad), var) for grad, var in gvs]
-        self.train_op = optimizer.apply_gradients(capped_gvs)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
+        # optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08,
+        #                                    use_locking=False, name='Adam')
+        if clip_gradient:
+            gvs = optimizer.compute_gradients(self.loss_op)
+            capped_gvs = [(apply_gradient_clipping(grad), var) for grad, var in gvs]
+            self.train_op = optimizer.apply_gradients(capped_gvs)
+        else:
+            self.train_op = optimizer.minimize(self.loss_op)
 
     def loss(self):
         self.loss_op = Loss.get_loss_ops(loss_type=FLAGS.loss_type, predictions=self.prediction_op,

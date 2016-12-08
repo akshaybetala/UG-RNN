@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class Molecule:
     def __init__(self, smile, contract_rings=False):
         self.smile = smile
-        logger.info("Parsing Molecule {:},contract rings: {:}".format(smile, contract_rings))
+        # logger.info("Parsing Molecule {:},contract rings: {:}".format(smile, contract_rings))
         self.atoms = []
         m = Chem.MolFromSmiles(smile)
         # Chem.Kekulize(self.m)

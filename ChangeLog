@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Adding documentation for methods. scaling down loss function to avoid gradient explosion
 * Restructuring and updating test code
 * Adding results folder
 * Update loss function for rmse

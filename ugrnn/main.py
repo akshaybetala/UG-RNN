@@ -156,7 +156,8 @@ class UGRNN(object):
             self.train_dataset.reset_epoch(permute=True)
             for i in xrange(self.train_dataset.num_examples):
                 feed_dict = self.fill_feed_dict(self.train_dataset)
-                _ = self.sess.run([self.train_ops], feed_dict=feed_dict)
+                _,_loss = self.sess.run([self.train_ops,self.loss_ops], feed_dict=feed_dict)
+                # logging.info("Loss {:}".format(_loss))
             self.sess.run([self.global_step_update_op])
 
             if epoch % 5 == 0:
@@ -309,6 +310,10 @@ if __name__ == '__main__':
     parser.add_argument('--contract_rings', dest='contract_rings', action='store_true')
     parser.add_argument('--no-contract_rings', dest='contract_rings', action='store_false')
     parser.set_defaults(contract_rings=False)
+
+    parser.add_argument('--clip_gradient', dest='clip_gradient', action='store_true')
+    parser.add_argument('--no-clip_gradient', dest='clip_gradient', action='store_false')
+    parser.set_defaults(clip_gradient=True)
 
     FLAGS = parser.parse_args()
     network.FLAGS = FLAGS
