@@ -3,10 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-
 import tensorflow as tf
-
-from ugrnn.loss import Loss
 from ugrnn.molecule import Molecule
 
 logger = logging.getLogger(__name__)
@@ -234,8 +231,7 @@ class Network(object):
             self.train_op = optimizer.minimize(self.loss_op)
 
     def loss(self):
-        self.loss_op = Loss.get_loss_ops(loss_type=FLAGS.loss_type, predictions=self.prediction_op,
-                                         targets=self.target_pl)
+        self.loss_op = tf.sqrt(tf.reduce_mean(tf.square(tf.sub(self.prediction_op, self.target_pl))))/2
 
     @staticmethod
     def get_contextual_feature(contextual_features, index, flattened_idx_offset, encoding_nn_output_size):

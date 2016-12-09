@@ -10,7 +10,6 @@ import os
 import numpy as np
 
 from ugrnn import network, input_data
-from ugrnn.loss import Loss
 from ugrnn.molecule import Molecule
 
 np.set_printoptions(threshold=np.inf)
@@ -148,42 +147,54 @@ class UGRNN(object):
         :param epochs:
         :return:
         '''
+
+        plt.subplot(2, 1, 1)
+        plt.title('Training data set')
         plt.axis([0, FLAGS.max_epochs, 0, 4])
+
+        plt.subplot(2, 1, 2)
+        plt.title('Vaidation data set')
+        plt.axis([0, FLAGS.max_epochs, 0, 4])
+
         plt.ion()
         logger.info('Start Training')
         for epoch in xrange(0, epochs):
+            if epoch % 5 == 0:
+                train_metric = self.evaluate(self.train_dataset)
+                validation_metric = self.evaluate(self.validation_dataset, write_result=False)
+                plt.subplot(2, 1, 1)
+                plt.scatter(epoch, train_metric[0],  color='red', marker=".")
+                plt.scatter(epoch, train_metric[1], color='blue', marker=".")
+
+                plt.subplot(2, 1, 2)
+                plt.scatter(epoch, validation_metric[0], color='red', marker=".")
+                plt.scatter(epoch, validation_metric[1], color='blue', marker=".")
+                # learning_rate = self.get_learning_rate()
+                plt.pause(0.05)
+                logger.info("Epoch: {:},  Train RMSE: {:}, Train AAE: {:} Validation RMSE {:}, Validation AAE {:}".
+                            format(epoch, train_metric[0],train_metric[1], validation_metric[0], validation_metric[1]))
 
             self.train_dataset.reset_epoch(permute=True)
             for i in xrange(self.train_dataset.num_examples):
                 feed_dict = self.fill_feed_dict(self.train_dataset)
-                _,_loss = self.sess.run([self.train_ops,self.loss_ops], feed_dict=feed_dict)
+                _, _loss = self.sess.run([self.train_ops, self.loss_ops], feed_dict=feed_dict)
                 # logging.info("Loss {:}".format(_loss))
             self.sess.run([self.global_step_update_op])
 
-            if epoch % 5 == 0:
-                train_error = self.loss(self.train_dataset)
-                validation_error = self.loss(self.validation_dataset, write_result=False)
-                plt.scatter(epoch, train_error, color='r')
-                plt.scatter(epoch, validation_error, color='b')
-                learning_rate = self.get_learning_rate()
-                plt.pause(0.05)
-                logger.info("Epoch: {:}, Learning rate {:} Train Loss: {:}, Validation Loss {:}".
-                            format(epoch, learning_rate, train_error, validation_error))
-
         logger.info('Training Finished')
 
-    def loss(self, dataset, write_result=False):
-        '''
-        :param dataset:
-        :param write_result:
-        :return:
-        '''
+    def evaluate(self, dataset, write_result=False):
         predictions = self.predict(dataset)
-        tragets = dataset.labels
-        error = Loss.get_error(FLAGS.loss_type, predictions, tragets)
+        targets = dataset.labels
         if write_result:
-            self.write_result(predictions, tragets)
-        return error
+            self.write_result(predictions, targets)
+        return UGRNN.get_metric(predictions, targets)
+
+    @staticmethod
+    def get_metric(predictions, targets):
+        rmse = np.sqrt(((predictions - targets) ** 2).mean())
+        aae = np.mean(np.abs(predictions - targets))
+        return rmse, aae
 
     def write_result(self, predictions, targets):
         '''
@@ -220,7 +231,7 @@ class UGRNN(object):
         folder_path = os.path.join(path, folder)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-        file_path = os.path.join(folder_path, "result_{}.txt".format(FLAGS.loss_type))
+        file_path = os.path.join(folder_path, "result.txt")
         return file_path
 
     def fill_feed_dict(self, dataset):
@@ -256,8 +267,8 @@ def main(_):
 
         ugrnn_model.train(epochs=FLAGS.max_epochs)
         ugrnn_model.optimize()
+
         predictions = ugrnn_model.predict(test_dataset)
-        error = Loss.get_error(FLAGS.loss_type, test_dataset.labels, predictions)
         logger.info("Loss: {:}".format(error))
 
 
@@ -282,9 +293,6 @@ if __name__ == '__main__':
 
     parser.add_argument('--train_dir', type=str, default='train',
                         help='Directory for storing data')
-
-    parser.add_argument('--loss_type', type=str, default='rmse',
-                        help='The loss function used for training')
 
     parser.add_argument('--activation_type', type=str, default='relu',
                         help='Summaries directory')
