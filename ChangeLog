@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Fix cost function to rmse
 * Hyper parameter optimization
 * Adding documentation for methods. scaling down loss function to avoid gradient explosion
 * Restructuring and updating test code

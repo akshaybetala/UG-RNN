@@ -103,7 +103,8 @@ class Network(object):
                                                   output_dim=1,
                                                   layer_name='output',
                                                   act=tf.identity,
-                                                  initializer=self.initializer_fun)
+                                                  initializer=self.initializer_fun,
+                                                  add_bias=False)
 
     @staticmethod
     def get_activation_fun(activation_fun):
@@ -132,12 +133,13 @@ class Network(object):
         :param initializer:
         :return:
         '''
+        logging.info("Weight Initializer:{}".format(initializer))
         if initializer == 'xavier':
-            logging.info("Weight Initializer:{}".format(initializer))
-            return tf.contrib.layers.xavier_initializer
+            return tf.contrib.layers.xavier_initializer(uniform=False)
+        elif initializer =='random':
+            return tf.random_normal_initializer()
         elif initializer == 'one':
-            logging.info("Weight Initializer:{}".format(initializer))
-            return tf.ones_initializer
+            return tf.ones_initializer()
         else:
             raise Exception("Inavlid initializer{}".format(initializer))
 
@@ -220,18 +222,20 @@ class Network(object):
             else:
                 return None
 
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
-        # optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08,
-        #                                    use_locking=False, name='Adam')
+        # optimizer = tf.train.GradientDescentOptimizer(learning_rate=self.learning_rate)
+        optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08,
+                                           use_locking=False, name='Adam')
+
+        gvs = optimizer.compute_gradients(self.loss_op)
+
         if clip_gradient:
-            gvs = optimizer.compute_gradients(self.loss_op)
-            capped_gvs = [(apply_gradient_clipping(grad), var) for grad, var in gvs]
-            self.train_op = optimizer.apply_gradients(capped_gvs)
-        else:
-            self.train_op = optimizer.minimize(self.loss_op)
+            gvs = [(apply_gradient_clipping(grad), var) for grad, var in gvs]
+
+        self.train_op = optimizer.apply_gradients(gvs)
 
     def loss(self):
-        self.loss_op = tf.sqrt(tf.reduce_mean(tf.square(tf.sub(self.prediction_op, self.target_pl))))/2
+        self.loss_op = tf.nn.l2_loss(self.prediction_op - self.target_pl)/2
+
 
     @staticmethod
     def get_contextual_feature(contextual_features, index, flattened_idx_offset, encoding_nn_output_size):
@@ -271,7 +275,7 @@ class Network(object):
         return contextual_features
 
     @staticmethod
-    def nn_layer(input_tensor, input_dim, output_dim, layer_name, act, initializer):
+    def nn_layer(input_tensor, input_dim, output_dim, layer_name, act, initializer, add_bias=True):
         '''
         :param input_tensor:
         :param input_dim:
@@ -291,10 +295,13 @@ class Network(object):
             weights = Network.weight_variable([input_dim, output_dim], initializer)
             Network.variable_summaries(weights, layer_name + '/weights')
 
-            biases = Network.bias_variable([output_dim])
-            Network.variable_summaries(biases, layer_name + '/biases')
+            preactivate = tf.matmul(input_tensor, weights)
+            if add_bias:
+                biases = Network.bias_variable([output_dim])
+                Network.variable_summaries(biases, layer_name + '/biases')
 
-            preactivate = tf.matmul(input_tensor, weights) + biases
+                preactivate +=  biases
+
             tf.histogram_summary(layer_name + '/pre_activations', preactivate)
 
             activations = act(preactivate, name='activation')
@@ -306,8 +313,9 @@ class Network(object):
     def weight_variable(shape, initializer):
         return tf.get_variable(name="weights",
                                shape=shape,
-                               initializer=initializer(),
-                               trainable=True)
+                               initializer=initializer,
+                               trainable=True,
+                               collections=['variables','weights'])
 
     @staticmethod
     def bias_variable(shape):

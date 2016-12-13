@@ -115,7 +115,6 @@ def read_data_sets(dataset="delaney", contract_rings=False):
     if dataset == "delaney":
         smiles, labels = delaney.read_data_set()
 
-    # smiles, labels = permute_data(smiles, labels)
     molecules = extract_molecules_from_smiles(smiles, contract_rings)
 
     traindata, valdata, testdata = cross_validation_split(data=molecules,
