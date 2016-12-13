@@ -56,8 +56,9 @@ class UGRNN(object):
         self.global_step = tf.Variable(0, name='global_step', trainable=False)
         self.global_step_update_op = tf.assign(self.global_step, tf.add(self.global_step, tf.constant(1)))
         self.no_of_models = 1
+        self.models = []
 
-        decay_rate = FLAGS.learning_rate / FLAGS.max_epochs
+        decay_rate = FLAGS.learning_rate_decay_factor
         decay_steps = FLAGS.max_epochs
         self.learning_rate = tf.train.exponential_decay(learning_rate=FLAGS.learning_rate,
                                                         global_step=self.global_step,
@@ -110,13 +111,21 @@ class UGRNN(object):
                                     learning_rate=self.learning_rate,
                                     max_seq_len=FLAGS.max_seq_len,
                                     initializer=FLAGS.initializer)
-
+            self.models.append(model)
             self.prediction_ops.append(model.prediction_op)
             self.loss_ops.append(model.loss_op)
             self.train_ops.append(model.train_op)
 
     def get_learning_rate(self):
         return self.sess.run([self.learning_rate])
+
+    def save_ugrnn(self):
+        for model in self.models:
+            model.save_network(self.sess)
+
+    def restore_ugrnn(self):
+        for model in self.models:
+            model.restore_network(self.sess)
 
     def optimize(self, dataset):
         '''
@@ -126,7 +135,7 @@ class UGRNN(object):
         logger.info('No of of models {:}'.format(self.no_of_models))
         self.no_of_best_models = int(self.no_of_models / 2)
         total_loss_values = np.zeros(self.no_of_models)
-        while dataset.epochs_completed < 1:
+        for i in xrange(dataset.num_examples):
             feed_dict = self.fill_feed_dict(dataset)
             loss_values, prediction_values = self.sess.run([self.loss_ops, self.prediction_ops],
                                                            feed_dict=feed_dict)
@@ -176,9 +185,10 @@ class UGRNN(object):
                 logger.info("Epoch: {:}, Learning rate {:}  Train RMSE: {:}, Train AAE: {:} Validation RMSE {:}, Validation AAE {:}".
                             format(epoch, learning_rate[0], train_metric[0],train_metric[1], validation_metric[0], validation_metric[1]))
 
-        if FLAGS.ensemble:
-            self.optimize(validation_dataset)
+        # if FLAGS.ensemble:
+        #     self.optimize(validation_dataset)
 
+        self.save_ugrnn()
         logger.info('Training Finished')
 
     def evaluate(self, dataset, write_result=False):
@@ -218,21 +228,6 @@ class UGRNN(object):
             prediction_values = self.sess.run([self.prediction_ops], feed_dict=feed_dict)
             predictions.append(np.mean(prediction_values))
         return np.array(predictions)
-
-    @staticmethod
-    def get_model_file_path(model_no):
-        '''
-        :return:
-        '''
-        path = os.path.dirname(os.path.realpath(__file__))
-        model_name = "model_{}".format(FLAGS.model_no)
-        folder = "{:}/{:}".format(FLAGS.train_dir, model_name)
-        model_file_name = "ugrnn.model" if not FLAGS.contract_rings else "ugrnn-cr.model"
-        folder_path = os.path.join(path, folder)
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        file_path = os.path.join(folder_path, model_file_name)
-        return file_path
 
     @staticmethod
     def get_result_file_path(model_no):
@@ -290,20 +285,14 @@ def main(_):
         ugrnn_model = UGRNN(sess=sess)
         logger.info("Succesfully created graph.")
 
-        saver = tf.train.Saver()
-
-        model_file_name = UGRNN.get_model_file_path(FLAGS.model_no)
+        init = tf.global_variables_initializer()
+        sess.run(init)
 
         if FLAGS.train:
             logger.info('Run the Op to initialize the variables')
-            init =tf.global_variables_initializer()
-            sess.run(init)
             ugrnn_model.train(train_dataset, validation_dataset, epochs=FLAGS.max_epochs)
-            saver.save(sess, model_file_name)
         else:
-            init = tf.global_variables_initializer()
-            sess.run(init)
-            saver.restore(sess, model_file_name)
+            ugrnn_model.restore_ugrnn()
             predictions = ugrnn_model.predict(test_dataset)
             prediction_metric = ugrnn_model.evaluate(test_dataset)
             logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0],prediction_metric[1]))
@@ -324,7 +313,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_epochs', type=int, default=2000,
                         help='Number of epochs to run trainer.')
 
-    parser.add_argument('--learning_rate', type=float, default=0.01,
+    parser.add_argument('--learning_rate', type=float, default=0.0001,
                         help='Initial learning rate')
 
     parser.add_argument('--learning_rate_decay_factor', type=float, default=0.98,
