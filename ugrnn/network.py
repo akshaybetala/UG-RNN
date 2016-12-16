@@ -12,52 +12,69 @@ FLAGS = None
 
 
 class Network(object):
+    max_seq_len=0
     def __init__(self, name, encoding_nn_hidden_size, encoding_nn_output_size,
-                 output_nn_hidden_size, max_seq_len, feature_pl, path_pl, sequence_len,
-                 target_pl, learning_rate, initializer):
+                 output_nn_hidden_size, max_seq_len, feature_pls, path_pls, sequence_lens,
+                 target_pls, learning_rate, initializer):
         """Build the ugrnn model up to where it may be used for inference."""
         self.name = name
         self.encoding_nn_output_size = encoding_nn_output_size
         self.output_nn_hidden_size = output_nn_hidden_size
-        self.feature_pl = feature_pl
-        self.path_pl = path_pl
-        self.target_pl = target_pl
-        self.sequence_len = sequence_len
-        self.max_seq_len = max_seq_len
+        Network.max_seq_len = max_seq_len
         self.encoding_nn_hidden_size = encoding_nn_hidden_size
-        self.flattened_idx_offset = tf.range(0, sequence_len) * max_seq_len * 4
+
         self.encoding_nn_input_size = 4 * encoding_nn_output_size + Molecule.num_of_features()
         self.learning_rate = learning_rate
         self.initializer_fun = Network.get_initializer(initializer)
 
+        assert FLAGS.batch_size == len(feature_pls)
+        assert FLAGS.batch_size == len(path_pls)
+        assert FLAGS.batch_size == len(target_pls)
+        assert FLAGS.batch_size == len(sequence_lens)
+
+        self.feature_pls = feature_pls
+        self.path_pls = path_pls
+        self.target_pls = target_pls
+        self.sequence_lens = sequence_lens
+        self.flattened_idx_offsets = [(tf.range(0, sequence_lens[i]) * Network.max_seq_len * 4) for i in
+                                      xrange(0, FLAGS.batch_size)]
+
         self.trainable_variables = []
         self.create_network_variable()
-        self.inference()
-        self.loss()
-        self.training(FLAGS.clip_gradient)
 
-    def save_network(self, sess):
-        self.saver = tf.train.Saver(self.trainable_variables)
-        file_name = self.get_model_file_path()
-        self.saver.save(sess,file_name)
+        self.prediction_ops = [self.predict(self.feature_pls[0], self.path_pls[0],
+                                            self.sequence_lens[0], self.flattened_idx_offsets[0])]
+        for i in xrange(1, FLAGS.batch_size):
+            with tf.control_dependencies([self.prediction_ops[i - 1]]):
+                prediction_op = self.predict(self.feature_pls[i], self.path_pls[i],
+                                             self.sequence_lens[i], self.flattened_idx_offsets[i])
+                self.prediction_ops.append(prediction_op)
+
+        self.loss()
+        self.training()
+
+    def save_network(self, sess, step):
+        self.saver = tf.train.Saver(self.trainable_variables, max_to_keep=1)
+        checkpoint_dir = self.get_checkpoint_dir()
+        file_path = os.path.join(checkpoint_dir, "checkpoint")
+        self.saver.save(sess, save_path=file_path,global_step=step,)
 
     def restore_network(self, sess):
-        self.saver = tf.train.Saver(self.trainable_variables)
-        file_name = self.get_model_file_path()
-        self.saver.restore(sess, file_name)
+        saver = tf.train.Saver(self.trainable_variables)
+        checkpoint_dir = self.get_checkpoint_dir()
+        saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir))
 
-    def get_model_file_path(self):
+    def get_checkpoint_dir(self):
         '''
         :return:
         '''
         path = os.path.dirname(os.path.realpath(__file__))
-        folder = "{:}/{:}".format(FLAGS.train_dir, self.name)
-        model_file_name = "ugrnn.model" if not FLAGS.contract_rings else "ugrnn-cr.model"
+        input_type = "ugrnn" if not FLAGS.contract_rings else "ugrnn_cr"
+        folder = "{:}/{:}/{:}/".format(FLAGS.models_dir, self.name, input_type)
         folder_path = os.path.join(path, folder)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-        file_path = os.path.join(folder_path, model_file_name)
-        return file_path
+        return folder_path
 
     def create_network_variable(self):
         '''
@@ -74,7 +91,6 @@ class Network(object):
             with tf.variable_scope('hidden1') as scope:
                 weights = Network.weight_variable([self.encoding_nn_input_size, self.encoding_nn_hidden_size],
                                                   initializer=self.initializer_fun)
-
                 biases = Network.bias_variable([self.encoding_nn_hidden_size])
                 self.trainable_variables.append(weights)
                 self.trainable_variables.append(biases)
@@ -90,7 +106,7 @@ class Network(object):
         with tf.variable_scope("OutputNN") as scope:
             with tf.variable_scope('hidden1') as scope:
                 weights = Network.weight_variable([self.encoding_nn_output_size, self.output_nn_hidden_size],
-                                                  self.initializer_fun)
+                                                  self.initializer_fun, 'weights_decay')
 
                 biases = Network.bias_variable([self.output_nn_hidden_size])
                 self.trainable_variables.append(weights)
@@ -98,10 +114,10 @@ class Network(object):
 
             with tf.variable_scope('output') as scope:
                 weights = Network.weight_variable([self.output_nn_hidden_size, 1],
-                                                  self.initializer_fun)
+                                                  self.initializer_fun, 'weights_decay')
                 self.trainable_variables.append(weights)
 
-    def inference(self):
+    def predict(self, feature_pl, path_pl, sequence_len,flattened_idx_offset):
         '''
         :return:
         '''
@@ -113,9 +129,9 @@ class Network(object):
                          dtype=tf.float32))
 
             _, step, _, _, _, contextual_features, _ = tf.while_loop(Network.cond, Network.body,
-                                                                     [self.sequence_len, step, self.feature_pl,
-                                                                      self.path_pl,
-                                                                      self.flattened_idx_offset, contextual_features,
+                                                                     [sequence_len, step, feature_pl,
+                                                                      path_pl,
+                                                                      flattened_idx_offset, contextual_features,
                                                                       self.encoding_nn_output_size],
                                                                      back_prop=True,
                                                                      swap_memory=False, name=None)
@@ -123,12 +139,12 @@ class Network(object):
             # use flattened indices1
             step_contextual_features = Network.get_contextual_feature(contextual_features=contextual_features,
                                                                       index=0,
-                                                                      flattened_idx_offset=self.flattened_idx_offset,
+                                                                      flattened_idx_offset=flattened_idx_offset,
                                                                       encoding_nn_output_size=self.encoding_nn_output_size)
 
             zero = tf.constant(0)
             input_begin = tf.pack([zero, step, zero])
-            step_feature = tf.squeeze(tf.slice(self.feature_pl, input_begin, [-1, 1, -1]), squeeze_dims=[1])
+            step_feature = tf.squeeze(tf.slice(feature_pl, input_begin, [-1, 1, -1]), squeeze_dims=[1])
 
             inputs = tf.concat(1, [step_contextual_features, step_feature])
             encodings = Network.apply_EncodingNN(inputs, FLAGS.activation_type)
@@ -137,7 +153,9 @@ class Network(object):
 
         with tf.variable_scope("OutputNN", reuse=True) as scope:
 
-            self.prediction_op = Network.apply_OutputNN(molecule_encoding,FLAGS.activation_type)
+            prediction_op = Network.apply_OutputNN(molecule_encoding,FLAGS.activation_type)
+
+        return prediction_op
 
     @staticmethod
     def get_activation_fun(activation_fun):
@@ -145,7 +163,7 @@ class Network(object):
         :param activation_fun:
         :return:
         '''
-        logging.info("Activation fun {:}".format(activation_fun))
+        # logging.info("Activation fun {:}".format(activation_fun))
         if activation_fun == 'tanh':
             return tf.nn.tanh
         elif activation_fun == 'relu6':
@@ -242,7 +260,7 @@ class Network(object):
                     contextual_features,
                     encoding_nn_output_size)
 
-    def training(self, clip_gradient=True):
+    def training(self):
         '''
         :return:
         '''
@@ -256,16 +274,21 @@ class Network(object):
         optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08,
                                            use_locking=False, name='Adam')
 
-        gvs = optimizer.compute_gradients(self.loss_op)
+        loss_op = self.loss_op + FLAGS.weight_decay_factor*tf.add_n([tf.nn.l2_loss(v) for v in tf.get_collection('weights_decay')])
 
-        if clip_gradient:
+        gvs = optimizer.compute_gradients(loss_op)
+
+        if FLAGS.clip_gradient:
             gvs = [(apply_gradient_clipping(grad), var) for grad, var in gvs]
 
         self.train_op = optimizer.apply_gradients(gvs)
 
     def loss(self):
-        self.loss_op = tf.nn.l2_loss(self.prediction_op - self.target_pl)/2
+        self.loss_op = 0
 
+        loss_op = [tf.square(tf.sub(self.prediction_ops[i], self.target_pls[i])) for i in xrange(0, FLAGS.batch_size)]
+        self.loss_op= tf.add_n(loss_op, name=None)/2
+        tf.summary.scalar("loss", tf.squeeze(self.loss_op))
 
     @staticmethod
     def get_contextual_feature(contextual_features, index, flattened_idx_offset, encoding_nn_output_size):
@@ -305,55 +328,26 @@ class Network(object):
         return contextual_features
 
     @staticmethod
-    def nn_layer(input_tensor, input_dim, output_dim, layer_name, act, initializer, add_bias=True):
-        '''
-        :param input_tensor:
-        :param input_dim:
-        :param output_dim:
-        :param layer_name:
-        :param act:
-        :param initializer:
-        :return:
-        '''
-        """Reusable code for making a simple neural net layer.
-        It does a matrix multiply, bias add, and then uses relu to nonlinearize.
-        It also sets up name scoping so that the resultant graph is easy to read,
-        and adds a number of summary ops.
-        """
-        # Adding a name scope ensures logical grouping of the layers in the graph.
-        with tf.variable_scope(layer_name) as scope:
-            weights = Network.weight_variable([input_dim, output_dim], initializer)
-            Network.variable_summaries(weights, layer_name + '/weights')
+    def weight_variable(shape, initializer, collection=None):
 
-            preactivate = tf.matmul(input_tensor, weights)
-            if add_bias:
-                biases = Network.bias_variable([output_dim])
-                Network.variable_summaries(biases, layer_name + '/biases')
-
-                preactivate +=  biases
-
-            tf.histogram_summary(layer_name + '/pre_activations', preactivate)
-
-            activations = act(preactivate, name='activation')
-            tf.histogram_summary(layer_name + '/activations', activations)
-
-            return activations
-
-    @staticmethod
-    def weight_variable(shape, initializer):
-        return tf.get_variable(name="weights",
+        weights =  tf.get_variable(name="weights",
                                shape=shape,
                                initializer=initializer,
                                trainable=True,
-                               collections=['variables','weights'])
+                               collections=['variables', collection])
+        # Network.variable_summaries(weights, "weights")
+        return weights
 
     @staticmethod
     def bias_variable(shape):
         """Create a bias variable with appropriate initialization."""
-        return tf.get_variable(name="biases",
+        biases= tf.get_variable(name="biases",
                                shape=shape,
                                initializer=tf.constant_initializer(0),
                                trainable=True)
+
+        # Network.variable_summaries(biases, "bias")
+        return biases
 
     @staticmethod
     def apply_EncodingNN(inputs, activation_type):
@@ -382,14 +376,14 @@ class Network(object):
             return tf.matmul(hidden1, weights)
 
     @staticmethod
-    def variable_summaries(var, name):
-        """Attach a lot of summaries to a Tensor."""
-        with tf.name_scope('summaries'):
+    def variable_summaries(var, type):
+        """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+        with tf.name_scope(type):
             mean = tf.reduce_mean(var)
-            tf.scalar_summary('mean/' + name, mean)
+            tf.summary.scalar('mean', mean)
             with tf.name_scope('stddev'):
                 stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
-            tf.scalar_summary('stddev/' + name, stddev)
-            tf.scalar_summary('max/' + name, tf.reduce_max(var))
-            tf.scalar_summary('min/' + name, tf.reduce_min(var))
-            tf.histogram_summary(name, var)
+            tf.summary.scalar('stddev', stddev)
+            tf.summary.scalar('max', tf.reduce_max(var))
+            tf.summary.scalar('min', tf.reduce_min(var))
+            tf.summary.histogram('histogram', var)

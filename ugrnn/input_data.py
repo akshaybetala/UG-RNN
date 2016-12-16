@@ -45,17 +45,22 @@ class DataSet(object):
         if permute:
             self._molecules, self._labels = permute_data(self._molecules, self._labels)
 
-    def next_molecule(self):
-        # Return the next example from this data set.
+    def next_batch(self, batch_size):
+        """Return the next `batch_size` examples from this data set."""
 
-        # Finished epoch
-        if self._index_in_epoch == self._num_examples - 1:
+        start = self._index_in_epoch
+        self._index_in_epoch += batch_size
+        if self._index_in_epoch > self._num_examples:
+            # Finished epoch
             self._epochs_completed += 1
+            # Shuffle the data
+            self._molecules, self._labels = permute_data(self._molecules, self._labels)
             # Start next epoch
-            self._index_in_epoch = 0
-            return self._molecules[self._num_examples - 1], self._labels[self._num_examples - 1]
-        self._index_in_epoch += 1
-        return self._molecules[self._index_in_epoch - 1], self._labels[self._index_in_epoch - 1]
+            start = 0
+            self._index_in_epoch = batch_size
+            assert batch_size <= self._num_examples
+        end = self._index_in_epoch
+        return self._molecules[start:end], self._labels[start:end]
 
 
 def extract_molecules_from_smiles(SMILES, contract_rings):
@@ -68,8 +73,7 @@ def extract_molecules_from_smiles(SMILES, contract_rings):
 
 def permute_data(data, labels):
     data_len = len(data)
-    perm = np.arange(data_len)
-    np.random.shuffle(perm)
+    perm = np.random.permutation(data_len)
     data_perm = data[perm]
     labels_perm = labels[perm]
     return data_perm, labels_perm
@@ -103,9 +107,8 @@ def cross_validation_split(data, labels, crossval_split_index, crossval_total_nu
     n_valid = int(N * validation_data_ratio)
     valdata = (rest_data[: n_valid], rest_labels[: n_valid])
     traindata = (rest_data[n_valid:], rest_labels[n_valid:])
-
+    print(len(traindata[0]), len(valdata[0]), len(testdata[0]))
     return traindata, valdata, testdata
-
 
 def read_data_sets(dataset="delaney", contract_rings=False):
     class DataSets(object):
