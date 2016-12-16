@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Add support for batch training
 * Restructure network to allow saving of models
 * expose parameters and refactoring
 * Fix cost function to rmse

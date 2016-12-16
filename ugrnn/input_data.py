@@ -110,6 +110,7 @@ def cross_validation_split(data, labels, crossval_split_index, crossval_total_nu
     print(len(traindata[0]), len(valdata[0]), len(testdata[0]))
     return traindata, valdata, testdata
 
+
 def read_data_sets(dataset="delaney", contract_rings=False):
     class DataSets(object):
         pass

@@ -3,16 +3,20 @@ from __future__ import division
 from __future__ import print_function
 
 import logging
-import tensorflow as tf
-from ugrnn.molecule import Molecule
 import os
+
+import tensorflow as tf
+
+from ugrnn.molecule import Molecule
+
 logger = logging.getLogger(__name__)
 
 FLAGS = None
 
 
 class Network(object):
-    max_seq_len=0
+    max_seq_len = 0
+
     def __init__(self, name, encoding_nn_hidden_size, encoding_nn_output_size,
                  output_nn_hidden_size, max_seq_len, feature_pls, path_pls, sequence_lens,
                  target_pls, learning_rate, initializer):
@@ -57,7 +61,7 @@ class Network(object):
         self.saver = tf.train.Saver(self.trainable_variables, max_to_keep=1)
         checkpoint_dir = self.get_checkpoint_dir()
         file_path = os.path.join(checkpoint_dir, "checkpoint")
-        self.saver.save(sess, save_path=file_path,global_step=step,)
+        self.saver.save(sess, save_path=file_path, global_step=step, )
 
     def restore_network(self, sess):
         saver = tf.train.Saver(self.trainable_variables)
@@ -117,7 +121,7 @@ class Network(object):
                                                   self.initializer_fun, 'weights_decay')
                 self.trainable_variables.append(weights)
 
-    def predict(self, feature_pl, path_pl, sequence_len,flattened_idx_offset):
+    def predict(self, feature_pl, path_pl, sequence_len, flattened_idx_offset):
         '''
         :return:
         '''
@@ -152,8 +156,7 @@ class Network(object):
             molecule_encoding = tf.expand_dims(tf.reduce_sum(encodings, 0), 0)
 
         with tf.variable_scope("OutputNN", reuse=True) as scope:
-
-            prediction_op = Network.apply_OutputNN(molecule_encoding,FLAGS.activation_type)
+            prediction_op = Network.apply_OutputNN(molecule_encoding, FLAGS.activation_type)
 
         return prediction_op
 
@@ -187,7 +190,7 @@ class Network(object):
         logging.info("Weight Initializer:{}".format(initializer))
         if initializer == 'xavier':
             return tf.contrib.layers.xavier_initializer(uniform=False)
-        elif initializer =='random':
+        elif initializer == 'random':
             return tf.random_normal_initializer()
         elif initializer == 'one':
             return tf.ones_initializer()
@@ -225,7 +228,7 @@ class Network(object):
 
         zero = tf.constant(0)
         one = tf.constant(1)
-        input_begin = tf.pack([zero,step,zero])
+        input_begin = tf.pack([zero, step, zero])
 
         step_feature = tf.squeeze(tf.slice(feature_pl, input_begin, [-1, 1, -1]))
 
@@ -264,6 +267,7 @@ class Network(object):
         '''
         :return:
         '''
+
         def apply_gradient_clipping(gradient):
             if gradient is not None:
                 return tf.mul(tf.clip_by_value(tf.abs(grad), 0.1, 1.), tf.sign(grad))
@@ -274,7 +278,8 @@ class Network(object):
         optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.999, epsilon=1e-08,
                                            use_locking=False, name='Adam')
 
-        loss_op = self.loss_op + FLAGS.weight_decay_factor*tf.add_n([tf.nn.l2_loss(v) for v in tf.get_collection('weights_decay')])
+        loss_op = self.loss_op + FLAGS.weight_decay_factor * tf.add_n(
+            [tf.nn.l2_loss(v) for v in tf.get_collection('weights_decay')])
 
         gvs = optimizer.compute_gradients(loss_op)
 
@@ -287,7 +292,7 @@ class Network(object):
         self.loss_op = 0
 
         loss_op = [tf.square(tf.sub(self.prediction_ops[i], self.target_pls[i])) for i in xrange(0, FLAGS.batch_size)]
-        self.loss_op= tf.add_n(loss_op, name=None)/2
+        self.loss_op = tf.add_n(loss_op, name=None) / 2
         tf.summary.scalar("loss", tf.squeeze(self.loss_op))
 
     @staticmethod
@@ -330,21 +335,21 @@ class Network(object):
     @staticmethod
     def weight_variable(shape, initializer, collection=None):
 
-        weights =  tf.get_variable(name="weights",
-                               shape=shape,
-                               initializer=initializer,
-                               trainable=True,
-                               collections=['variables', collection])
+        weights = tf.get_variable(name="weights",
+                                  shape=shape,
+                                  initializer=initializer,
+                                  trainable=True,
+                                  collections=['variables', collection])
         # Network.variable_summaries(weights, "weights")
         return weights
 
     @staticmethod
     def bias_variable(shape):
         """Create a bias variable with appropriate initialization."""
-        biases= tf.get_variable(name="biases",
-                               shape=shape,
-                               initializer=tf.constant_initializer(0),
-                               trainable=True)
+        biases = tf.get_variable(name="biases",
+                                 shape=shape,
+                                 initializer=tf.constant_initializer(0),
+                                 trainable=True)
 
         # Network.variable_summaries(biases, "bias")
         return biases

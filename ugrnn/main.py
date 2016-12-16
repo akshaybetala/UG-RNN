@@ -20,32 +20,31 @@ import tensorflow as tf
 import argparse
 import matplotlib.pyplot as plt
 
-from operator import add
 # Basic model parameters as external flags.
 FLAGS = None
 
 
 class UGRNN(object):
-    model_types = [(8, 8, 5),
-                   (12, 11, 5),
-                   (12, 10, 5),
-                   (12, 9, 5),
-                   (12, 8, 5),
-                   (10, 12, 5),
-                   (11, 12, 5),
-                   (13, 12, 5),
-                   (14, 12, 5),
-                   (14, 12, 5),
-                   (14, 11, 5),
-                   (14, 10, 5),
-                   (14, 9, 5),
-                   (13, 12, 5),
-                   (11, 12, 5),
-                   (10, 15, 5),
-                   (15, 10, 5),
-                   (16, 11, 5),
-                   (12, 13, 5),
-                   (11, 11, 5)]
+    model_types = [(8, 10, 10),
+                   (7, 10, 5),
+                   (7, 8, 5),
+                   (7, 7, 5),
+                   (7, 5, 5),
+                   (7, 8, 5),
+                   (7, 9, 5),
+                   (7, 10, 5),
+                   (7, 11, 5),
+                   (7, 12, 5),
+                   (6, 8, 5),
+                   (9, 8, 5),
+                   (10, 8, 5),
+                   (6, 8, 5),
+                   (7, 8, 5),
+                   (8, 8, 5),
+                   (9, 8, 5),
+                   (10, 8, 5),
+                   (11, 8, 5),
+                   (12, 8, 5)]
 
     def __init__(self, sess):
         logger.info("Creating the Network")
@@ -63,13 +62,15 @@ class UGRNN(object):
         self.loss_ops = []
         self.train_ops = []
 
-        self.learning_rate = FLAGS.learning_rate*tf.pow(FLAGS.learning_rate_decay_factor, tf.to_float(self.global_step), name=None)
+        self.learning_rate = FLAGS.learning_rate * tf.pow(FLAGS.learning_rate_decay_factor,
+                                                          tf.to_float(self.global_step), name=None)
         logger.info('Initial learning rate: {:}'.format(FLAGS.learning_rate))
         logger.info("Ensemble {:}".format(FLAGS.ensemble))
 
         self.sess = sess
 
         if FLAGS.ensemble:
+            self.no_of_models = len(self.model_types)
             logger.info("Total number of Models {:}".format(len(self.model_types)))
             for i, model_param in enumerate(self.model_types):
                 model_name = "model_{}".format(i)
@@ -130,11 +131,11 @@ class UGRNN(object):
         '''
         logger.info('Optimize network')
         logger.info('No of of models {:}'.format(self.no_of_models))
-        predictions,_ = self.predict(dataset)
+        predictions, _ = self.predict(dataset)
         errors = []
-        for i in xrange(0,self.no_of_models):
-            model_prediction = predictions[:,i]
-            error = self.get_metric(model_prediction,dataset.labels)
+        for i in xrange(0, self.no_of_models):
+            model_prediction = predictions[:, i]
+            error = self.get_metric(model_prediction, dataset.labels)
             errors.append(error[0])
         self.no_of_best_models = int(self.no_of_models / 2)
         errors = np.array(errors)
@@ -167,19 +168,20 @@ class UGRNN(object):
         for epoch in xrange(0, epochs):
             for i in xrange(steps_in_epoch):
                 feed_dict = self.fill_feed_dict(train_dataset, FLAGS.batch_size)
-                _, summaries = self.sess.run([self.train_ops,self.summaries], feed_dict=feed_dict)
+                _, summaries = self.sess.run([self.train_ops, self.summaries], feed_dict=feed_dict)
             train_writer.add_summary(summaries, epoch)
 
             train_dataset.reset_epoch(permute=True)
 
             self.sess.run([self.global_step_update_op])
+            if epoch % 50 == 0:
+                self.save_ugrnn(epoch)
 
             if epoch % 5 == 0:
-                self.save_ugrnn(epoch)
                 train_metric = self.evaluate(train_dataset)
                 validation_metric = self.evaluate(validation_dataset)
                 plt.subplot(2, 1, 1)
-                plt.scatter(epoch, train_metric[0],  color='red', marker=".")
+                plt.scatter(epoch, train_metric[0], color='red', marker=".")
                 plt.scatter(epoch, train_metric[1], color='blue', marker=".")
 
                 plt.subplot(2, 1, 2)
@@ -187,12 +189,12 @@ class UGRNN(object):
                 plt.scatter(epoch, validation_metric[1], color='blue', marker=".")
                 learning_rate = self.get_learning_rate()
                 plt.pause(0.05)
-                logger.info("Epoch: {:}, Learning rate {:.8f}  Train RMSE: {:.4f}, Train AAE: {:.4f} Validation RMSE {:.4f}, Validation AAE {:.4f}".
-                            format(epoch, learning_rate[0], train_metric[0],train_metric[1], validation_metric[0], validation_metric[1],
-                                   precision=8))
+                logger.info(
+                    "Epoch: {:}, Learning rate {:.8f}  Train RMSE: {:.4f}, Train AAE: {:.4f} Validation RMSE {:.4f}, Validation AAE {:.4f}".
+                    format(epoch, learning_rate[0], train_metric[0], train_metric[1], validation_metric[0],
+                           validation_metric[1],
+                           precision=8))
 
-        # if FLAGS.ensemble:
-        #     self.optimize(validation_dataset)
         self.save_ugrnn(epochs)
         logger.info('Training Finished')
 
@@ -209,13 +211,15 @@ class UGRNN(object):
 
     def predict(self, dataset):
         dataset.reset_epoch()
-        individual_predictions = np.empty((dataset.num_examples,len(self.prediction_ops)))
+        individual_predictions = np.empty((dataset.num_examples, len(self.prediction_ops)))
+        average = []
         for i in xrange(0, dataset.num_examples):
             feed_dict = self.fill_feed_dict(dataset, 1)
             prediction_values = self.sess.run([self.prediction_ops], feed_dict=feed_dict)
-            individual_predictions[i,:] = np.squeeze(prediction_values)
-        average = np.mean(individual_predictions,axis=1)
-        return individual_predictions,average
+            individual_predictions[i, :] = np.squeeze(prediction_values)
+            average.append(np.mean(prediction_values))
+
+        return individual_predictions, np.array(average)
 
     @staticmethod
     def get_result_file_path(model_no):
@@ -259,6 +263,7 @@ class UGRNN(object):
 
         return feed_dict
 
+
 def main(_):
     with tf.Graph().as_default():
         # Create a session for running Ops on the Graph.
@@ -288,12 +293,13 @@ def main(_):
 
             _, predictions = ugrnn_model.predict(test_dataset)
             prediction_metric = ugrnn_model.get_metric(predictions, test_dataset.labels)
-            logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0],prediction_metric[1]))
+            logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0], prediction_metric[1]))
             data = np.array([predictions, test_dataset.labels])
             data = data.T
             f = open("results", 'w+')
             np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'], header="Prediction, Target")
             f.close()
+
 
 if __name__ == '__main__':
     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -308,10 +314,10 @@ if __name__ == '__main__':
     parser.add_argument('--predict', dest='predict', action='store_true')
     parser.set_defaults(predict=False)
 
-    parser.add_argument('--max_epochs', type=int, default=500,
+    parser.add_argument('--max_epochs', type=int, default=300,
                         help='Number of epochs to run trainer.')
 
-    parser.add_argument('--batch_size', type=int, default=20,
+    parser.add_argument('--batch_size', type=int, default=4,
                         help='Batch size.')
 
     parser.add_argument('--learning_rate', type=float, default=0.0008,
@@ -320,7 +326,7 @@ if __name__ == '__main__':
     parser.add_argument('--learning_rate_decay_factor', type=float, default=0.99,
                         help='Initial learning rate')
 
-    parser.add_argument('--weight_decay_factor', type=float, default=0.0005,
+    parser.add_argument('--weight_decay_factor', type=float, default=0.0001,
                         help='Weight decay factor')
 
     parser.add_argument('--max_seq_len', type=int, default=100,
