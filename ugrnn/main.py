@@ -25,26 +25,26 @@ FLAGS = None
 
 
 class UGRNN(object):
-    model_types = [(8, 10, 10),
-                   (7, 10, 5),
-                   (7, 8, 5),
-                   (7, 7, 5),
+    model_types = [(5, 5, 5),
+                   (6, 5, 5),
                    (7, 5, 5),
-                   (7, 8, 5),
-                   (7, 9, 5),
-                   (7, 10, 5),
-                   (7, 11, 5),
-                   (7, 12, 5),
-                   (6, 8, 5),
-                   (9, 8, 5),
-                   (10, 8, 5),
+                   (8, 5, 5),
+                   (5, 6, 5),
+                   (6, 6, 5),
+                   (7, 6, 5),
+                   (8, 6, 5),
+                   (5, 7, 5),
+                   (6, 7, 5),
+                   (7, 7, 5),
+                   (8, 7, 5),
+                   (5, 8, 5),
                    (6, 8, 5),
                    (7, 8, 5),
                    (8, 8, 5),
-                   (9, 8, 5),
-                   (10, 8, 5),
-                   (11, 8, 5),
-                   (12, 8, 5)]
+                   (5, 8, 4),
+                   (6, 8, 4),
+                   (7, 8, 4),
+                   (8, 8, 4)]
 
     def __init__(self, sess):
         logger.info("Creating the Network")
@@ -288,8 +288,8 @@ def main(_):
             ugrnn_model.train(train_dataset, validation_dataset, epochs=FLAGS.max_epochs)
         else:
             ugrnn_model.restore_ugrnn()
-            if FLAGS.ensemble:
-                ugrnn_model.optimize(validation_dataset)
+            # if FLAGS.ensemble:
+            #     ugrnn_model.optimize(validation_dataset)
 
             _, predictions = ugrnn_model.predict(test_dataset)
             prediction_metric = ugrnn_model.get_metric(predictions, test_dataset.labels)
@@ -314,19 +314,19 @@ if __name__ == '__main__':
     parser.add_argument('--predict', dest='predict', action='store_true')
     parser.set_defaults(predict=False)
 
-    parser.add_argument('--max_epochs', type=int, default=300,
+    parser.add_argument('--max_epochs', type=int, default=200,
                         help='Number of epochs to run trainer.')
 
     parser.add_argument('--batch_size', type=int, default=4,
                         help='Batch size.')
 
-    parser.add_argument('--learning_rate', type=float, default=0.0008,
+    parser.add_argument('--learning_rate', type=float, default=0.001,
                         help='Initial learning rate')
 
     parser.add_argument('--learning_rate_decay_factor', type=float, default=0.99,
                         help='Initial learning rate')
 
-    parser.add_argument('--weight_decay_factor', type=float, default=0.0001,
+    parser.add_argument('--weight_decay_factor', type=float, default=0.00005,
                         help='Weight decay factor')
 
     parser.add_argument('--max_seq_len', type=int, default=100,

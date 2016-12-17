@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Add scripts for training and prediction. Save models for batch size 4
 * Add support for batch training
 * Restructure network to allow saving of models
 * expose parameters and refactoring
