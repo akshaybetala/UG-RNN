@@ -57,6 +57,8 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+ugrnn/models/*
+
 # PyBuilder
 target/
 
