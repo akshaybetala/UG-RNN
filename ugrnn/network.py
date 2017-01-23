@@ -142,7 +142,7 @@ class Network(object):
 				tf.zeros([self.max_seq_len * self.max_seq_len * 4,
 						  self.encoding_nn_output_size],
 						 dtype=tf.float32))
-
+	
 			_, step, _, _, _, contextual_features, _ = tf.while_loop(
 				Network.cond, Network.body,
 				[sequence_len, step, feature_pl,
@@ -159,11 +159,8 @@ class Network(object):
 				flattened_idx_offset=flattened_idx_offset,
 				encoding_nn_output_size=self.encoding_nn_output_size)
 
-			zero = tf.constant(0)
-			input_begin = tf.pack([zero, step, zero])
-			step_feature = tf.squeeze(
-				tf.slice(feature_pl, input_begin, [-1, 1, -1]),
-				squeeze_dims=[1])
+			indices = tf.pack([tf.range(0, sequence_len), tf.range(0, sequence_len)], axis=1)
+			step_feature = tf.gather_nd(feature_pl, indices)
 
 			inputs = tf.concat(1, [step_contextual_features, step_feature])
 			encodings = Network.apply_EncodingNN(inputs, FLAGS.activation_type)
@@ -247,11 +244,12 @@ class Network(object):
 		one = tf.constant(1)
 		input_begin = tf.pack([zero, step, zero])
 
-		step_feature = tf.squeeze(
-			tf.slice(feature_pl, input_begin, [-1, 1, -1]))
-
 		input_idx = tf.slice(path_pl, input_begin, [-1, 1, 1])
 		input_idx = tf.reshape(input_idx, [-1])
+
+		indices = tf.pack([tf.range(0, sequence_len), input_idx], axis=1)
+		step_feature = tf.gather_nd(feature_pl, indices)
+
 
 		output_begin = tf.pack([zero, step, one])
 		tf.get_variable_scope().reuse_variables()

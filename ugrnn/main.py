@@ -49,7 +49,7 @@ class UGRNN(object):
 	def __init__(self, sess):
 		logger.info("Creating the Network")
 		batch_size = FLAGS.batch_size
-		self.feature_pls = [tf.placeholder(tf.float32, shape=[None, None,
+		self.local_input_pls = [tf.placeholder(tf.float32, shape=[None, None,
 															  Molecule.num_of_features()])
 							for i in
 							xrange(batch_size)]
@@ -118,7 +118,7 @@ class UGRNN(object):
 									encoding_nn_hidden_size=encoding_nn_hidden_size,
 									encoding_nn_output_size=encoding_nn_output_size,
 									output_nn_hidden_size=output_nn_hidden_size,
-									feature_pls=self.feature_pls,
+									feature_pls=self.local_input_pls,
 									path_pls=self.path_pls,
 									target_pls=self.target_pls,
 									sequence_lens=self.sequence_len_pls,
@@ -192,10 +192,8 @@ class UGRNN(object):
 			train_dataset.reset_epoch(permute=True)
 
 			self.sess.run([self.global_step_update_op])
-			if epoch % 50 == 0:
-				self.save_ugrnn(epoch)
 
-			if epoch % 5 == 0:
+			if epoch % 10 == 0:
 				train_metric = self.evaluate(train_dataset)
 				validation_metric = self.evaluate(validation_dataset)
 				plt.subplot(2, 1, 1)
@@ -210,8 +208,7 @@ class UGRNN(object):
 				learning_rate = self.get_learning_rate()
 				plt.pause(0.05)
 				logger.info(
-					"Epoch: {:}, Learning rate {:.8f}  Train RMSE: {:.4f}, Train AAE: {:.4f} \
-					Validation RMSE {:.4f}, Validation AAE {:.4f}".
+					"Epoch: {:}, Learning rate {:.8f}  Train RMSE: {:.4f}, Train AAE: {:.4f} Validation RMSE {:.4f}, Validation AAE {:.4f}".
 						format(epoch, learning_rate[0], train_metric[0],
 							   train_metric[1], validation_metric[0],
 							   validation_metric[1],
@@ -280,11 +277,11 @@ class UGRNN(object):
 		molecules_feeds, targets_feeds = dataset.next_batch(batch_size)
 		feed_dict = {}
 		for i in xrange(batch_size):
-			feed_dict[self.feature_pls[i]] = molecules_feeds[i].feature_vector
+			feed_dict[self.local_input_pls[i]] = molecules_feeds[i].local_input_vector
 			feed_dict[self.path_pls[i]] = molecules_feeds[i].directed_graphs
 			feed_dict[self.target_pls[i]] = targets_feeds[i]
 			feed_dict[self.sequence_len_pls[i]] = \
-				molecules_feeds[i].feature_vector.shape[1]
+				molecules_feeds[i].local_input_vector.shape[1]
 
 		return feed_dict
 
@@ -318,17 +315,17 @@ def main(_):
 			if FLAGS.ensemble:
 				ugrnn_model.optimize(validation_dataset)
 
-			_, predictions = ugrnn_model.predict(test_dataset)
-			prediction_metric = ugrnn_model.get_metric(predictions,
-													   test_dataset.labels)
-			logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0],
-													 prediction_metric[1]))
-			data = np.array([predictions, test_dataset.labels])
-			data = data.T
-			f = open("results", 'w+')
-			np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'],
-					   header="Prediction, Target")
-			f.close()
+		_, predictions = ugrnn_model.predict(test_dataset)
+		prediction_metric = ugrnn_model.get_metric(predictions,
+												   test_dataset.labels)
+		logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0],
+												 prediction_metric[1]))
+		data = np.array([predictions, test_dataset.labels])
+		data = data.T
+		f = open("results", 'w+')
+		np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'],
+				   header="Prediction, Target")
+		f.close()
 
 
 if __name__ == '__main__':
@@ -344,7 +341,7 @@ if __name__ == '__main__':
 	parser.add_argument('--predict', dest='predict', action='store_true')
 	parser.set_defaults(predict=False)
 
-	parser.add_argument('--max_epochs', type=int, default=200,
+	parser.add_argument('--max_epochs', type=int, default=300,
 						help='Number of epochs to run trainer.')
 
 	parser.add_argument('--batch_size', type=int, default=5,
@@ -354,10 +351,10 @@ if __name__ == '__main__':
 						help='Initial learning rate')
 
 	parser.add_argument('--learning_rate_decay_factor', type=float,
-						default=0.985,
+						default=0.99,
 						help='Initial learning rate')
 
-	parser.add_argument('--weight_decay_factor', type=float, default=0.0001,
+	parser.add_argument('--weight_decay_factor', type=float, default=0.0000,
 						help='Weight decay factor')
 
 	parser.add_argument('--max_seq_len', type=int, default=100,
