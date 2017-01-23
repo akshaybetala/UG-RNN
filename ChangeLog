@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Adding support for using logP
 * Running models for UG-RNN and UG-RNN_CR of delaney data set
 * GitIgnore model files
 * Indentation FIx

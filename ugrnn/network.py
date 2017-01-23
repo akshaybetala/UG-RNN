@@ -84,7 +84,7 @@ class Network(object):
 		path = os.path.dirname(os.path.realpath(__file__))
 		dataset = FLAGS.dataset
 		model_type = "UGRNN" if not FLAGS.contract_rings else "UGRNN-CR"
-		if FLAGS.add_logp:
+		if FLAGS.add_logP:
 			model_type = model_type + "-logP"
 		folder = "{:}/{:}/{:}/{:}/".format(FLAGS.models_dir,dataset, model_type, self.name)
 		folder_path = os.path.join(path, folder)
