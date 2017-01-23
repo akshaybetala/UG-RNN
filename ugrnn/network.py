@@ -18,17 +18,21 @@ class Network(object):
 	max_seq_len = 0
 
 	def __init__(self, name, encoding_nn_hidden_size, encoding_nn_output_size,
-				 output_nn_hidden_size, max_seq_len, feature_pls, path_pls,
-				 sequence_lens,
-				 target_pls, learning_rate, initializer):
+				 output_nn_hidden_size, max_seq_len, feature_pls, path_pls,logP_pls,
+				 sequence_lens, target_pls, learning_rate, initializer):
 		"""Build the ugrnn model up to where it may be used for inference."""
 		self.name = name
 		self.encoding_nn_output_size = encoding_nn_output_size
+		self.encoding_nn_hidden_size = encoding_nn_hidden_size
+		self.encoding_nn_input_size = 4 * encoding_nn_output_size + Molecule.num_of_features()
+
+		if FLAGS.add_logP:
+			self.output_nn_input_size = self.encoding_nn_output_size + 1
+		else:
+			self.output_nn_input_size = self.encoding_nn_output_size
 		self.output_nn_hidden_size = output_nn_hidden_size
 		Network.max_seq_len = max_seq_len
-		self.encoding_nn_hidden_size = encoding_nn_hidden_size
 
-		self.encoding_nn_input_size = 4 * encoding_nn_output_size + Molecule.num_of_features()
 		self.learning_rate = learning_rate
 		self.initializer_fun = Network.get_initializer(initializer)
 
@@ -41,6 +45,7 @@ class Network(object):
 		self.path_pls = path_pls
 		self.target_pls = target_pls
 		self.sequence_lens = sequence_lens
+		self.logP_pls = logP_pls
 		self.flattened_idx_offsets = [
 			(tf.range(0, sequence_lens[i]) * Network.max_seq_len * 4) for i in
 			xrange(0, FLAGS.batch_size)]
@@ -49,12 +54,13 @@ class Network(object):
 		self.create_network_variable()
 
 		self.prediction_ops = [
-			self.predict(self.feature_pls[0], self.path_pls[0],
+			self.predict(self.feature_pls[0], self.path_pls[0], self.logP_pls[0],
 						 self.sequence_lens[0], self.flattened_idx_offsets[0])]
 		for i in xrange(1, FLAGS.batch_size):
 			with tf.control_dependencies([self.prediction_ops[i - 1]]):
 				prediction_op = self.predict(self.feature_pls[i],
 											 self.path_pls[i],
+											 self.logP_pls[i],
 											 self.sequence_lens[i],
 											 self.flattened_idx_offsets[i])
 				self.prediction_ops.append(prediction_op)
@@ -71,24 +77,23 @@ class Network(object):
 	def restore_network(self, sess):
 		saver = tf.train.Saver(self.trainable_variables)
 		checkpoint_dir = self.get_checkpoint_dir()
+		print(checkpoint_dir)
 		saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir))
 
 	def get_checkpoint_dir(self):
-		'''
-		:return:
-		'''
 		path = os.path.dirname(os.path.realpath(__file__))
-		input_type = "ugrnn" if not FLAGS.contract_rings else "ugrnn_cr"
-		folder = "{:}/{:}/{:}/".format(FLAGS.models_dir, self.name, input_type)
+		dataset = FLAGS.dataset
+		model_type = "UGRNN" if not FLAGS.contract_rings else "UGRNN-CR"
+		if FLAGS.add_logp:
+			model_type = model_type + "-logP"
+		folder = "{:}/{:}/{:}/{:}/".format(FLAGS.models_dir,dataset, model_type, self.name)
 		folder_path = os.path.join(path, folder)
+		print(folder_path)
 		if not os.path.exists(folder_path):
 			os.makedirs(folder_path)
 		return folder_path
 
 	def create_network_variable(self):
-		'''
-		:return:
-		'''
 		with tf.variable_scope("EncodingNN") as scope:
 			contextual_features = tf.get_variable("contextual_features",
 										[self.max_seq_len * self.max_seq_len * 4,
@@ -118,7 +123,7 @@ class Network(object):
 		with tf.variable_scope("OutputNN") as scope:
 			with tf.variable_scope('hidden1') as scope:
 				weights = Network.weight_variable(
-					[self.encoding_nn_output_size, self.output_nn_hidden_size],
+					[self.output_nn_input_size, self.output_nn_hidden_size],
 					self.initializer_fun, 'weights_decay')
 
 				biases = Network.bias_variable([self.output_nn_hidden_size])
@@ -131,10 +136,7 @@ class Network(object):
 					self.initializer_fun, 'weights_decay')
 				self.trainable_variables.append(weights)
 
-	def predict(self, feature_pl, path_pl, sequence_len, flattened_idx_offset):
-		'''
-		:return:
-		'''
+	def predict(self, feature_pl, path_pl,logP_pl, sequence_len, flattened_idx_offset):
 		with tf.variable_scope("EncodingNN", reuse=True) as scope:
 			step = tf.constant(0)
 			contextual_features = tf.get_variable("contextual_features")
@@ -166,19 +168,21 @@ class Network(object):
 			encodings = Network.apply_EncodingNN(inputs, FLAGS.activation_type)
 
 			molecule_encoding = tf.expand_dims(tf.reduce_sum(encodings, 0), 0)
+			x = tf.expand_dims(logP_pl, 0)
+			x = tf.expand_dims(x,1)
+			if FLAGS.add_logP:
+				outputNN_input = tf.concat(1, [x, molecule_encoding])
+			else:
+				outputNN_input = molecule_encoding
 
 		with tf.variable_scope("OutputNN", reuse=True) as scope:
-			prediction_op = Network.apply_OutputNN(molecule_encoding,
+			prediction_op = Network.apply_OutputNN(outputNN_input,
 												   FLAGS.activation_type)
 
 		return prediction_op
 
 	@staticmethod
 	def get_activation_fun(activation_fun):
-		'''
-		:param activation_fun:
-		:return:
-		'''
 		# logging.info("Activation fun {:}".format(activation_fun))
 		if activation_fun == 'tanh':
 			return tf.nn.tanh
@@ -197,10 +201,6 @@ class Network(object):
 
 	@staticmethod
 	def get_initializer(initializer):
-		'''
-		:param initializer:
-		:return:
-		'''
 		logging.info("Weight Initializer:{}".format(initializer))
 		if initializer == 'xavier':
 			return tf.contrib.layers.xavier_initializer(uniform=False)
@@ -229,17 +229,6 @@ class Network(object):
 			 flattened_idx_offset,
 			 contextual_features,
 			 encoding_nn_output_size):
-		'''
-		:param sequence_len:
-		:param step:
-		:param feature_pl:
-		:param path_pl:
-		:param flattened_idx_offset:
-		:param contextual_features:
-		:param encoding_nn_output_size:
-		:return:
-		'''
-
 		zero = tf.constant(0)
 		one = tf.constant(1)
 		input_begin = tf.pack([zero, step, zero])
@@ -283,10 +272,6 @@ class Network(object):
 					encoding_nn_output_size)
 
 	def training(self):
-		'''
-		:return:
-		'''
-
 		def apply_gradient_clipping(gradient):
 			if gradient is not None:
 				return tf.mul(tf.clip_by_value(tf.abs(grad), 0.1, 1.),
@@ -322,15 +307,8 @@ class Network(object):
 	@staticmethod
 	def get_contextual_feature(contextual_features, index,
 							   flattened_idx_offset, encoding_nn_output_size):
-		'''
-		:param contextual_features:
-		:param index:
-		:param flattened_idx_offset:
-		:param encoding_nn_output_size:
-		:return:
-		'''
 		"""
-			Contextual vector is flatted array
+		Contextual vector is flatted array
 			index is 1D index with
 		"""
 		indices = index + flattened_idx_offset
@@ -346,13 +324,6 @@ class Network(object):
 	@staticmethod
 	def update_contextual_features(contextual_features, indices, updates,
 								   flattened_idx_offset):
-		'''
-		:param contextual_features:
-		:param indices:
-		:param updates:
-		:param flattened_idx_offset:
-		:return:
-		'''
 		first_indices, second_indices = tf.split(1, 2, indices)
 		indices = tf.squeeze(first_indices + second_indices)
 		indices = indices + flattened_idx_offset

@@ -26,43 +26,37 @@ FLAGS = None
 
 class UGRNN(object):
 	model_types = [(7, 3, 5),
-				   (7, 4, 5),
-				   (7, 5, 5),
-				   (7, 6, 5),
-				   (7, 7, 5),
-				   (7, 8, 5),
-				   (7, 9, 5),
-				   (7, 10, 5),
-				   (7, 11, 5),
-				   (7, 12, 5),
-				   (3, 3, 5),
-				   (4, 3, 5),
-				   (5, 3, 5),
-				   (6, 3, 5),
-				   (7, 3, 5),
-				   (8, 3, 5),
-				   (9, 3, 5),
-				   (10, 3, 5),
-				   (11, 3, 5),
-				   (12, 3, 5)]
+					(7, 4, 5),
+					(7, 5, 5),
+					(7, 6, 5),
+					(7, 7, 5),
+					(7, 8, 5),
+					(7, 9, 5),
+					(7, 10, 5),
+					(7, 11, 5),
+					(7, 12, 5),
+					(3, 3, 5),
+					(4, 3, 5),
+					(5, 3, 5),
+					(6, 3, 5),
+					(7, 3, 5),
+					(8, 3, 5),
+					(9, 3, 5),
+					(10, 3, 5),
+					(11, 3, 5),
+					(12, 3, 5)]
 
 	def __init__(self, sess):
 		logger.info("Creating the Network")
 		batch_size = FLAGS.batch_size
-		self.local_input_pls = [tf.placeholder(tf.float32, shape=[None, None,
-															  Molecule.num_of_features()])
-							for i in
-							xrange(batch_size)]
-		self.path_pls = [tf.placeholder(tf.int32, shape=[None, None, 3]) for i
-						 in xrange(batch_size)]
-		self.target_pls = [tf.placeholder(tf.float32) for i in
-						   xrange(batch_size)]
-		self.sequence_len_pls = [tf.placeholder(tf.int32) for i in
-								 xrange(batch_size)]
+		self.local_input_pls = \
+			[tf.placeholder(tf.float32, shape=[None, None, Molecule.num_of_features()]) for i in xrange(batch_size)]
+		self.path_pls = [tf.placeholder(tf.int32, shape=[None, None, 3]) for i in xrange(batch_size)]
+		self.target_pls = [tf.placeholder(tf.float32) for i in xrange(batch_size)]
+		self.logP_pls = [tf.placeholder(tf.float32) for i in xrange(batch_size)]
+		self.sequence_len_pls = [tf.placeholder(tf.int32) for i in xrange(batch_size)]
 		self.global_step = tf.Variable(0, name='global_step', trainable=False)
-		self.global_step_update_op = tf.assign(self.global_step,
-											   tf.add(self.global_step,
-													  tf.constant(1)))
+		self.global_step_update_op = tf.assign(self.global_step,tf.add(self.global_step, tf.constant(1)))
 		self.no_of_models = 1
 		self.models = []
 		self.prediction_ops = []
@@ -83,9 +77,7 @@ class UGRNN(object):
 				"Total number of Models {:}".format(len(self.model_types)))
 			for i, model_param in enumerate(self.model_types):
 				model_name = "model_{}".format(i)
-				logger.info(
-					"Building model {:} with parameters {:}".format(model_name,
-																	model_param))
+				logger.info("Building model {:} with parameters {:}".format(model_name,model_param))
 				model = self.create_model(model_name, model_param)
 				self.models.append(model)
 				self.loss_ops.append(model.loss_op)
@@ -94,9 +86,7 @@ class UGRNN(object):
 		else:
 			model_name = "model_{}".format(FLAGS.model_no)
 			model_param = self.model_types[FLAGS.model_no]
-			logger.info(
-				"Building model {:} with parameters {:}".format(model_name,
-																model_param))
+			logger.info("Building model {:} with parameters {:}".format(model_name, model_param))
 			model = self.create_model(model_name, model_param)
 			self.models.append(model)
 			self.loss_ops.append(model.loss_op)
@@ -105,10 +95,6 @@ class UGRNN(object):
 		self.summaries = tf.summary.merge_all()
 
 	def create_model(self, model_name, model_param):
-		'''
-		:param model_name:
-		:return:
-		'''
 		encoding_nn_hidden_size = model_param[0]
 		encoding_nn_output_size = model_param[1]
 		output_nn_hidden_size = model_param[2]
@@ -120,6 +106,7 @@ class UGRNN(object):
 									output_nn_hidden_size=output_nn_hidden_size,
 									feature_pls=self.local_input_pls,
 									path_pls=self.path_pls,
+									logP_pls=self.logP_pls,
 									target_pls=self.target_pls,
 									sequence_lens=self.sequence_len_pls,
 									learning_rate=self.learning_rate,
@@ -139,9 +126,6 @@ class UGRNN(object):
 			model.restore_network(self.sess)
 
 	def optimize(self, dataset):
-		'''
-		:return:
-		'''
 		logger.info('Optimize network')
 		logger.info('No of of models {:}'.format(self.no_of_models))
 		predictions, _ = self.predict(dataset)
@@ -155,17 +139,10 @@ class UGRNN(object):
 		index_of_best_networks = errors.argsort()[:self.no_of_best_models]
 		logging.info(errors)
 		logging.info(index_of_best_networks)
-		self.prediction_ops = [self.prediction_ops[index] for index in
-							   index_of_best_networks]
+		self.prediction_ops = [self.prediction_ops[index] for index in index_of_best_networks]
 
 	def train(self, train_dataset, validation_dataset, epochs=1):
-		'''
-		:param epochs:
-		:return:
-		'''
-
-		train_writer = tf.train.SummaryWriter(FLAGS.summaries_dir + '/train',
-											  self.sess.graph)
+		train_writer = tf.train.SummaryWriter(FLAGS.summaries_dir + '/train', self.sess.graph)
 
 		plt.subplot(2, 1, 1)
 		plt.title('Training data set')
@@ -185,8 +162,7 @@ class UGRNN(object):
 			for i in xrange(steps_in_epoch):
 				feed_dict = self.fill_feed_dict(train_dataset,
 												FLAGS.batch_size)
-				_, summaries = self.sess.run([self.train_ops, self.summaries],
-											 feed_dict=feed_dict)
+				_, summaries = self.sess.run([self.train_ops, self.summaries], feed_dict=feed_dict)
 			train_writer.add_summary(summaries, epoch)
 
 			train_dataset.reset_epoch(permute=True)
@@ -201,10 +177,8 @@ class UGRNN(object):
 				plt.scatter(epoch, train_metric[1], color='blue', marker=".")
 
 				plt.subplot(2, 1, 2)
-				plt.scatter(epoch, validation_metric[0], color='red',
-							marker=".")
-				plt.scatter(epoch, validation_metric[1], color='blue',
-							marker=".")
+				plt.scatter(epoch, validation_metric[0], color='red', marker=".")
+				plt.scatter(epoch, validation_metric[1], color='blue', marker=".")
 				learning_rate = self.get_learning_rate()
 				plt.pause(0.05)
 				logger.info(
@@ -224,7 +198,7 @@ class UGRNN(object):
 
 	@staticmethod
 	def get_metric(predictions, targets):
-		rmse = np.sqrt(((predictions - targets) ** 2).mean())
+		rmse = np.sqrt(np.mean((predictions - targets) ** 2))
 		aae = np.mean(np.abs(predictions - targets))
 		return rmse, aae
 
@@ -235,8 +209,7 @@ class UGRNN(object):
 		average = []
 		for i in xrange(0, dataset.num_examples):
 			feed_dict = self.fill_feed_dict(dataset, 1)
-			prediction_values = self.sess.run([self.prediction_ops],
-											  feed_dict=feed_dict)
+			prediction_values = self.sess.run([self.prediction_ops], feed_dict=feed_dict)
 			individual_predictions[i, :] = np.squeeze(prediction_values)
 			average.append(np.mean(prediction_values))
 
@@ -244,9 +217,6 @@ class UGRNN(object):
 
 	@staticmethod
 	def get_result_file_path(model_no):
-		'''
-		:return:
-		'''
 		path = os.path.dirname(os.path.realpath(__file__))
 		model_name = "model_{}".format(FLAGS.model_no)
 		folder = "{:}/{:}".format(FLAGS.result_dir, model_name)
@@ -259,9 +229,6 @@ class UGRNN(object):
 
 	@staticmethod
 	def get_log_file_path(model_no):
-		'''
-		:return:
-		'''
 		path = os.path.dirname(os.path.realpath(__file__))
 		model_name = "model_{}".format(FLAGS.model_no)
 		folder = "{:}/{:}".format(FLAGS.log_dir, model_name)
@@ -280,8 +247,10 @@ class UGRNN(object):
 			feed_dict[self.local_input_pls[i]] = molecules_feeds[i].local_input_vector
 			feed_dict[self.path_pls[i]] = molecules_feeds[i].directed_graphs
 			feed_dict[self.target_pls[i]] = targets_feeds[i]
-			feed_dict[self.sequence_len_pls[i]] = \
-				molecules_feeds[i].local_input_vector.shape[1]
+			feed_dict[self.sequence_len_pls[i]] = molecules_feeds[i].local_input_vector.shape[1]
+
+			if FLAGS.add_logP:
+				feed_dict[self.logP_pls[i]] = molecules_feeds[i].logP
 
 		return feed_dict
 
@@ -293,8 +262,7 @@ def main(_):
 
 		logger.info('Loading {:} dataset'.format(FLAGS.dataset))
 		logger.info('Contract Rings: {:}'.format(FLAGS.contract_rings))
-		data_sets = input_data.read_data_sets(FLAGS.dataset,
-											  FLAGS.contract_rings)
+		data_sets = input_data.read_data_sets(FLAGS.dataset, FLAGS.add_logP, FLAGS.contract_rings)
 		train_dataset = data_sets.train
 		validation_dataset = data_sets.validation
 		test_dataset = data_sets.test
@@ -308,23 +276,19 @@ def main(_):
 
 		if FLAGS.train:
 			logger.info('Run the Op to initialize the variables')
-			ugrnn_model.train(train_dataset, validation_dataset,
-							  epochs=FLAGS.max_epochs)
+			ugrnn_model.train(train_dataset, validation_dataset, epochs=FLAGS.max_epochs)
 		else:
 			ugrnn_model.restore_ugrnn()
 			if FLAGS.ensemble:
 				ugrnn_model.optimize(validation_dataset)
 
 		_, predictions = ugrnn_model.predict(test_dataset)
-		prediction_metric = ugrnn_model.get_metric(predictions,
-												   test_dataset.labels)
-		logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0],
-												 prediction_metric[1]))
+		prediction_metric = ugrnn_model.get_metric(predictions, test_dataset.labels)
+		logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0], prediction_metric[1]))
 		data = np.array([predictions, test_dataset.labels])
 		data = data.T
 		f = open("results", 'w+')
-		np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'],
-				   header="Prediction, Target")
+		np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'], header="Prediction, Target")
 		f.close()
 
 
@@ -388,6 +352,11 @@ if __name__ == '__main__':
 	parser.add_argument('--contract_rings', dest='contract_rings',
 						action='store_true')
 	parser.set_defaults(contract_rings=False)
+
+	parser.add_argument('--add_logP', dest='add_logP',
+						action='store_true')
+	parser.set_defaults(add_logP=False)
+
 
 	parser.add_argument('--clip_gradient', dest='clip_gradient',
 						action='store_true')

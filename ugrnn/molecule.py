@@ -14,8 +14,9 @@ logger = logging.getLogger(__name__)
 class Molecule:
 	max_number_of_parents = 4
 
-	def __init__(self, smile, contract_rings=False):
+	def __init__(self, smile, logP=None, contract_rings=False):
 		self.smile = smile
+		self.logP = logP
 		#logger.info("Parsing Molecule {:},contract rings: {:}".format(smile, contract_rings))
 		self.atoms = []
 		m = Chem.MolFromSmiles(smile)
@@ -25,15 +26,12 @@ class Molecule:
 
 		for i in xrange(self.no_of_atoms):
 			atom = m.GetAtomWithIdx(i)
-			self.graph.add_node(i, attr_dict={
-				"atom_features": Molecule.atom_features(atom)})
+			self.graph.add_node(i, attr_dict={"atom_features": Molecule.atom_features(atom)})
 			for neighbour in atom.GetNeighbors():
 				neighbour_idx = neighbour.GetIdx()
 				bond = m.GetBondBetweenAtoms(i, neighbour_idx)
 				self.graph.add_edge(i, neighbour_idx,
-									attr_dict={
-										"bond_features": Molecule.bond_features(
-											bond)})
+								attr_dict={"bond_features": Molecule.bond_features(bond)})
 
 		if contract_rings:
 			self.reduce_graph_rings()
@@ -65,8 +63,7 @@ class Molecule:
 			for node1, node2 in cycle:
 				if isinstance(node1, six.string_types):
 					self.graph.add_edge(node1, cycle_name,
-										attr_dict={
-											"bond_features": Molecule.bond_features_between_contract_rings()})
+						attr_dict={"bond_features": Molecule.bond_features_between_contract_rings()})
 					continue
 
 				neighbours = self.graph.neighbors(node1)
@@ -170,10 +167,6 @@ class Molecule:
 				start = length_of_atom_features + index* length_of_bond_features
 				end = start + length_of_bond_features
 
-				# print(start,end)
-				# print(index)
-				# print(self.local_input_vector[idx, node2, start:end])
-				# update the vetor of node2 with the bond information with its parent node1
 				self.local_input_vector[idx, node2, start:end] = \
 					self.get_bond_features(node1, node2)
 

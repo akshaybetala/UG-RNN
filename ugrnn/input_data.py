@@ -65,11 +65,14 @@ class DataSet(object):
 		return self._molecules[start:end], self._labels[start:end]
 
 
-def extract_molecules_from_smiles(SMILES, contract_rings):
+def extract_molecules_from_smiles(SMILES, logP, contract_rings):
 	size = len(SMILES)
 	molecules = np.empty(size, dtype=object)
 	for i in xrange(size):
-		molecules[i] = Molecule(SMILES[i], contract_rings)
+		molecule_logP = None
+		if logP is not None:
+			molecule_logP = logP[i]
+		molecules[i] = Molecule(SMILES[i], molecule_logP, contract_rings)
 	return molecules
 
 
@@ -97,8 +100,7 @@ def cross_validation_split(data, labels, crossval_split_index,
 	testdata = (data[start_test: end_test], labels[start_test: end_test])
 
 	rest_data = np.concatenate((data[:start_test], data[end_test:]), axis=0)
-	rest_labels = np.concatenate((labels[:start_test], labels[end_test:]),
-								 axis=0)
+	rest_labels = np.concatenate((labels[:start_test], labels[end_test:]), axis=0)
 
 	n_valid = int(N * validation_data_ratio)
 	valdata = (rest_data[: n_valid], rest_labels[: n_valid])
@@ -107,18 +109,18 @@ def cross_validation_split(data, labels, crossval_split_index,
 	return traindata, valdata, testdata
 
 
-def read_data_sets(dataset="delaney", contract_rings=False):
+def read_data_sets(dataset="delaney", add_logP=False, contract_rings=False):
 	class DataSets(object):
 		pass
 
 	data_sets = DataSets()
 	if dataset == "delaney":
-		smiles, labels = delaney.read_data_set()
+		smiles, target, logP = delaney.read_data_set(add_logP)
 
-	molecules = extract_molecules_from_smiles(smiles, contract_rings)
+	molecules = extract_molecules_from_smiles(smiles, logP, contract_rings)
 
 	traindata, valdata, testdata = cross_validation_split(data=molecules,
-														  labels=labels,
+														  labels=target,
 														  crossval_split_index=0,
 														  crossval_total_num_splits=10,
 														  validation_data_ratio=0.1)
