@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-sudo python setup.py install
-python -m ugrnn.main --train --model_no=0
+sudo python setup.py install && python -m ugrnn.train
 python -m ugrnn.main --train --model_no=1
 python -m ugrnn.main --train --model_no=2
 python -m ugrnn.main --train --model_no=3

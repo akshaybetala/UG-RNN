@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 class Molecule:
 	max_number_of_parents = 4
 
-	def __init__(self, smile, logP=None, contract_rings=False):
+	def __init__(self, smile, logp=None, contract_rings=False):
 		self.smile = smile
-		self.logP = logP
+		self.logp = logp
 		#logger.info("Parsing Molecule {:},contract rings: {:}".format(smile, contract_rings))
 		self.atoms = []
 		m = Chem.MolFromSmiles(smile)
