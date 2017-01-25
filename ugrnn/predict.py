@@ -2,6 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from sklearn import linear_model
+
 import argparse
 import logging
 import os
@@ -22,7 +24,7 @@ def save_results(file_path, targets, predictions):
     data = np.array([targets, predictions])
     data = data.T
     f = open(file_path, 'w+')
-    np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'], header="Target, Prediction")
+    np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'], header="Target, Prediction",comments="")
     f.close()
 
 
@@ -63,23 +65,23 @@ def get_prediction_from_model(model_name, encoding_nn_hidden_size, encoding_nn_o
 
     return prediction_validate, prediction_test
 
+def get_next_best_model(index, current_prediction, all_predictions, targets):
+    print("======================================")
+    no_of_models = len(all_predictions)
 
-def optimize(self, dataset):
-    logger.info('Optimize network')
-    logger.info('No of of models {:}'.format(self.no_of_models))
-    predictions, _ = self.predict(dataset)
-    errors = []
-    for i in xrange(0, self.no_of_models):
-        model_prediction = predictions[:, i]
-        error = self.get_metric(model_prediction, dataset.labels)
-        errors.append(error[0])
-    self.no_of_best_models = int(self.no_of_models / 2)
-    errors = np.array(errors)
-    index_of_best_networks = errors.argsort()[:self.no_of_best_models]
-    logging.info(errors)
-    logging.info(index_of_best_networks)
-    self.prediction_ops = [self.prediction_ops[index] for index in index_of_best_networks]
+    current_error = (get_metric(current_prediction,targets))[0]
+    print("Current error {:}".format(current_error))
+    next_best_model_index = -1
 
+    for i in xrange(0, no_of_models):
+        temp_prediction = (index*current_prediction + all_predictions[i])/(index+1)
+        metric = get_metric(temp_prediction, targets)
+        print(metric[0])
+        if metric[0] < current_error:
+            next_best_model_index = i
+            current_error = metric[0]
+
+    return next_best_model_index
 
 def main(_):
     logger.info('Loading test dataset from {:}'.format(FLAGS.test_file))
@@ -92,12 +94,32 @@ def main(_):
                                  target_col_name=FLAGS.target_col, logp_col_name=FLAGS.logp_col,
                                  contract_rings=FLAGS.contract_rings)
 
+    validation_predictions = np.empty((len(FLAGS.model_names), validation_dataset.num_examples))
+    test_predictions_ = np.empty((len(FLAGS.model_names), test_dataset.num_examples))
+
     for i in xrange(0,len(FLAGS.model_names)):
-        prediction_validate, prediction_test = get_prediction_from_model(FLAGS.model_names[i], FLAGS.model_params[i][0],
+        predictions = get_prediction_from_model(FLAGS.model_names[i], FLAGS.model_params[i][0],
                                                                          FLAGS.model_params[i][1], FLAGS.model_params[i][2],
                                                                          test_dataset, validation_dataset)
-        prediction_metric = get_metric(prediction_validate, validation_dataset.labels)
-        logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0], prediction_metric[1]))
+
+        prediction_metric = get_metric(predictions[0], validation_dataset.labels)
+        logger.info("Model {:} RMSE: {:}, AAE: {:}".format(FLAGS.model_names[i], prediction_metric[0], prediction_metric[1]))
+
+        validation_predictions[i, :] = predictions[0]
+        test_predictions_[i, :] = predictions[1]
+
+    if FLAGS.optimize_ensemble:
+        lr = linear_model.LinearRegression(fit_intercept=False)
+        lr = lr.fit(validation_predictions.T, validation_dataset.labels)
+        emsemble_preditions = lr.predict(test_predictions_.T)
+    else:
+        emsemble_preditions = np.mean(test_predictions_, axis=0)
+
+    prediction_metric = get_metric(emsemble_preditions, test_dataset.labels)
+    logger.info("RMSE: {:}, AAE: {:}".format(prediction_metric[0], prediction_metric[1]))
+
+    final_prediction_path = os.path.join(FLAGS.output_dir,"ensemble_test_prediction.csv")
+    save_results(final_prediction_path, test_dataset.labels, emsemble_preditions)
 
 
 if __name__ == '__main__':
@@ -134,6 +156,10 @@ if __name__ == '__main__':
     parser.add_argument('--add_logp', dest='add_logp',
                         action='store_true')
     parser.set_defaults(add_logp=False)
+
+    parser.add_argument('--optimize_ensemble', dest='optimize_ensemble',
+                        action='store_true')
+    parser.set_defaults(optimize_ensemble=False)
 
     FLAGS = parser.parse_args()
     assert len(FLAGS.model_params) == len(FLAGS.model_names)
