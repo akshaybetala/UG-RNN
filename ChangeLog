@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Restructuring code
 * Trained models for delaney data set
 * Adding support for using logP
 * Running models for UG-RNN and UG-RNN_CR of delaney data set

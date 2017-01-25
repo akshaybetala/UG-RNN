@@ -13,6 +13,7 @@ import numpy as np
 from ugrnn import config
 from ugrnn.molecule import Molecule
 from ugrnn import nn_utils
+from ugrnn.utils import get_metric
 
 logger = logging.getLogger(__name__)
 
@@ -296,7 +297,7 @@ class UGRNN(object):
     def evaluate(self, sess,  dataset):
         predictions = self.predict(sess, dataset)
         targets = dataset.labels
-        return UGRNN.get_metric(predictions, targets)
+        return get_metric(predictions, targets)
 
     def predict(self, sess, dataset):
         dataset.reset_epoch()
@@ -306,12 +307,6 @@ class UGRNN(object):
             prediction_value = sess.run([self.prediction_ops[0]], feed_dict=feed_dict)
             predictions[i] = np.mean(prediction_value)
         return predictions
-
-    @staticmethod
-    def get_metric(predictions, targets):
-        rmse = np.sqrt(np.mean((predictions - targets) ** 2))
-        aae = np.mean(np.abs(predictions - targets))
-        return rmse, aae
 
     def fill_feed_dict(self, dataset, batch_size):
         assert batch_size <= self.batch_size
@@ -332,14 +327,15 @@ class UGRNN(object):
         return sess.run([self.learning_rate])
 
     def save_model(self, sess, checkpoint_dir, step):
+        logging.info("Saving model {:}".format(self.model_name))
         saver = tf.train.Saver(self.trainable_variables, max_to_keep=1)
         checkpoint_file = os.path.join(checkpoint_dir, 'model.ckpt')
-        saver.save(sess, save_path=checkpoint_file, global_step=step)
+        saver.save(sess, save_path=checkpoint_file)
 
-    def restore_model(self, sess, output_dir):
+    def restore_model(self, sess, checkpoint_dir):
+        logging.info("Restoring model {:}".format(self.model_name))
         saver = tf.train.Saver(self.trainable_variables)
-        checkpoint_file = os.path.join(output_dir, 'model.ckpt')
-        saver.restore(sess, checkpoint_file)
+        saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir))
 
     @staticmethod
     def get_contextual_feature(contextual_features, index,

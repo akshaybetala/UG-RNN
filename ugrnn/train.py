@@ -10,7 +10,7 @@ import numpy as np
 
 from ugrnn.input_data import DataSet
 from ugrnn.ugrnn import UGRNN
-
+from ugrnn.utils import model_params
 np.set_printoptions(threshold=np.inf)
 
 import tensorflow as tf
@@ -41,13 +41,9 @@ def main(_):
 
         logger.info("Creating Graph.")
 
-        add_logp = False
-        if FLAGS.logp_col:
-            add_logp = True
-
         ugrnn_model = UGRNN(FLAGS.model_name, encoding_nn_hidden_size=FLAGS.model_params[0],
                             encoding_nn_output_size=FLAGS.model_params[1], output_nn_hidden_size=FLAGS.model_params[2],
-                            batch_size=1, learning_rate=0.001, add_logp=add_logp)
+                            batch_size=FLAGS.batch_size, learning_rate=0.001, add_logp=FLAGS.add_logp)
 
         logger.info("Succesfully created graph.")
 
@@ -75,7 +71,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=5,
                         help='Batch size.')
 
-    parser.add_argument('--model_params', nargs='+', type=int)
+    parser.add_argument('--model_params', help="Model Parameters", dest="model_params", type=model_params)
 
     parser.add_argument('--learning_rate', type=float, default=0.001,
                         help='Initial learning rate')
@@ -83,10 +79,10 @@ if __name__ == '__main__':
     parser.add_argument('--output_dir', type=str, default='train',
                         help='Directory for storing the trained models')
 
-    parser.add_argument('--training_file', type=str, default='ugrnn/data/delaney/delaney.csv',
+    parser.add_argument('--training_file', type=str, default='ugrnn/data/delaney/train_delaney.csv',
                         help='Path to the csv file containing training data set')
 
-    parser.add_argument('--validation_file', type=str, default='ugrnn/data/delaney/delaney.csv',
+    parser.add_argument('--validation_file', type=str, default='ugrnn/data/delaney/validate_delaney.csv',
                         help='Path to the csv file containing validation data set')
 
     parser.add_argument('--smile_col', nargs='+', type=str, default='smiles')
@@ -98,6 +94,10 @@ if __name__ == '__main__':
     parser.add_argument('--contract_rings', dest='contract_rings',
                         action='store_true')
     parser.set_defaults(contract_rings=False)
+
+    parser.add_argument('--add_logp', dest='add_logp',
+                        action='store_true')
+    parser.set_defaults(add_logp=False)
 
     parser.add_argument('--clip_gradient', dest='clip_gradient',
                         action='store_true')
