@@ -1,2 +1,4 @@
 tensorflow
 networkx
+scipy
+scikit-learn

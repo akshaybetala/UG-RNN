@@ -76,7 +76,7 @@
 94 192-97-2 benzo(e)pyrene -7.80 178.5 6.11 c1ccc2c(c1)c4cccc5ccc3cccc2c3c45
 96 198-55-0 perylene -8.80 277 6.11 c(c(ccc1)ccc2)(c1c(c(c(cc3)ccc4)c45)c3)c25
 97 191-24-2 benzo(ghi)perylene -9.03 277 6.70 c16cccc2ccc3ccc4ccc5cccc6c5c4c3c12
-98 86-74-8 carbazole -4.97 245 3.23 n(H)(c(c(c1cccc2)ccc3)c3)c12
+98 86-74-8 carbazole -4.97 245 3.23 [nH](c(c(c1cccc2)ccc3)c3)c12
 99 132-65-0 dibenzothiophene -4.38 97 4.17 s(c(c(c1cccc2)ccc3)c3)c12
 101 239-64-5 13H-dibenzo(a,i)carbazole -7.42 220 5.58 c1ccc4c(c1)ccc5c3ccc2ccccc2c3n(H)c45
 102 260-94-6 acridine -3.67 106 3.32 n(c(c(ccc1)cc2cccc3)c1)c23
@@ -789,7 +789,7 @@
 989 488-73-3 d-Quercitol -0.17 234 -2.33 OC1C(O)C(O)C(O)C(O)C1
 990 643-12-9 D-Inositol 0.35 249.5 -2.08 OC1C(O)C(O)C(O)C(O)C1O
 991 ? n-Amyl_Carbamate -1.47 liq? 1.45 NC(=O)OCCCCC
-992 ? tert-Amyl_Carbamate -0.80 1.34 NC(=O)OCC(C)(C)C
+992 ? tert-Amyl_Carbamate -0.80 ? 	1.34 NC(=O)OCC(C)(C)C
 994 50-70-4 Sorbitol 1.09 110 -3.01 OCC(O)C(O)C(O)C(O)CO
 995 82-68-8 Quintozene -5.82 139 5.03 O=N(=O)c(c(c(c(c1Cl)Cl)Cl)Cl)c1Cl
 996 1689-84-5 Bromoxynil -3.33 190 3.39 Oc1c(Br)cc(C#N)cc1Br

@@ -1,6 +1,8 @@
 CHANGES
 =======
 
+* Logistic regression model for combining ensemble
+* Split delaney data set and minor changes
 * Restructuring code
 * Trained models for delaney data set
 * Adding support for using logP

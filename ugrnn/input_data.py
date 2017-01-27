@@ -12,6 +12,7 @@ import csv
 class DataSet(object):
 
     def __init__(self, csv_file_path, smile_col_name, target_col_name, logp_col_name=None, contract_rings=False):
+
         data = read_csv(csv_file_path, smile_col_name, target_col_name, logp_col_name)
 
         smiles = np.array(zip(*data)[0])

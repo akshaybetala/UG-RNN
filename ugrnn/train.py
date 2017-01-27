@@ -11,7 +11,7 @@ import numpy as np
 from ugrnn.input_data import DataSet
 from ugrnn.ugrnn import UGRNN
 from ugrnn.utils import model_params
-np.set_printoptions(threshold=np.inf)
+np.set_printoptions(threshold=np.inf, precision=4)
 
 import tensorflow as tf
 
@@ -29,14 +29,16 @@ def main(_):
         # Create a session for running Ops on the Graph.
         sess = tf.Session()
 
+        logp_col_name = FLAGS.logp_col if FLAGS.add_logp else None
+
         logger.info('Loading Training dataset from {:}'.format(FLAGS.training_file))
         train_dataset = DataSet(csv_file_path=FLAGS.training_file, smile_col_name=FLAGS.smile_col,
-                                target_col_name=FLAGS.target_col, logp_col_name=FLAGS.logp_col,
+                                target_col_name=FLAGS.target_col, logp_col_name=logp_col_name,
                                 contract_rings=FLAGS.contract_rings)
 
         logger.info('Loading validation dataset from {:}'.format(FLAGS.validation_file))
         validation_dataset = DataSet(csv_file_path=FLAGS.validation_file, smile_col_name=FLAGS.smile_col,
-                                     target_col_name=FLAGS.target_col, logp_col_name=FLAGS.logp_col,
+                                     target_col_name=FLAGS.target_col, logp_col_name=logp_col_name,
                                      contract_rings=FLAGS.contract_rings)
 
         logger.info("Creating Graph.")
@@ -68,7 +70,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_epochs', type=int, default=300,
                         help='Number of epochs to run trainer.')
 
-    parser.add_argument('--batch_size', type=int, default=5,
+    parser.add_argument('--batch_size', type=int, default=10,
                         help='Batch size.')
 
     parser.add_argument('--model_params', help="Model Parameters", dest="model_params", type=model_params)
@@ -85,11 +87,11 @@ if __name__ == '__main__':
     parser.add_argument('--validation_file', type=str, default='ugrnn/data/delaney/validate_delaney.csv',
                         help='Path to the csv file containing validation data set')
 
-    parser.add_argument('--smile_col', nargs='+', type=str, default='smiles')
+    parser.add_argument('--smile_col', type=str, default='smiles')
 
-    parser.add_argument('--logp_col', nargs='+', type=str, default='logp')
+    parser.add_argument('--logp_col', type=str, default='logp')
 
-    parser.add_argument('--target_col', nargs='+', type=str, default='solubility')
+    parser.add_argument('--target_col', type=str, default='solubility')
 
     parser.add_argument('--contract_rings', dest='contract_rings',
                         action='store_true')

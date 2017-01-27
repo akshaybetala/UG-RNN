@@ -23,8 +23,8 @@ class UGRNN(object):
                  output_nn_hidden_size, batch_size=1, learning_rate=0.001,  add_logp=False):
         """Build the ugrnn model up to where it may be used for inference."""
 
-        logger.info("Creating the UGRNN")
-        logger.info('Initial learning rate: {:}'.format(learning_rate))
+        # logger.info("Creating the UGRNN")
+        # logger.info('Initial learning rate: {:}'.format(learning_rate))
 
         self.model_name = model_name
         self.batch_size = batch_size
@@ -250,22 +250,25 @@ class UGRNN(object):
         return loss_op
 
     def train(self, sess, epochs, train_dataset, validation_dataset):
+
+        train_metric = self.evaluate(sess, train_dataset)
+        validation_metric = self.evaluate(sess, validation_dataset)
+
         plt.subplot(2, 1, 1)
         plt.title('Training data set')
-        plt.axis([0, epochs, 0, 3])
+        plt.axis([0, epochs, 0, train_metric[0]])
 
         plt.subplot(2, 1, 2)
         plt.title('Vaidation data set')
-        plt.axis([0, epochs, 0, 3])
+        plt.axis([0, epochs, 0, validation_metric[0]])
 
         plt.ion()
-        saver = tf.train.Saver()
         logger.info('Start Training')
 
         steps_in_epoch = train_dataset.num_examples // self.batch_size
 
         for epoch in xrange(0, epochs):
-            for i in xrange(steps_in_epoch):
+            for i in xrange(0, steps_in_epoch):
                 feed_dict = self.fill_feed_dict(train_dataset, self.batch_size)
                 _ = sess.run([self.train_op], feed_dict=feed_dict)
 
@@ -333,7 +336,7 @@ class UGRNN(object):
         saver.save(sess, save_path=checkpoint_file)
 
     def restore_model(self, sess, checkpoint_dir):
-        logging.info("Restoring model {:}".format(self.model_name))
+        # logging.info("Restoring model {:}".format(self.model_name))
         saver = tf.train.Saver(self.trainable_variables)
         saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir))
 
