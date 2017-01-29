@@ -13,7 +13,7 @@ import numpy as np
 from ugrnn import config
 from ugrnn.molecule import Molecule
 from ugrnn import nn_utils
-from ugrnn.utils import get_metric
+from ugrnn.utils import get_metric, save_results
 
 logger = logging.getLogger(__name__)
 
@@ -61,20 +61,22 @@ class UGRNN(object):
         self.trainable_variables = []
         self.create_UGRNN_variable()
 
-        prediction_op = self.add_prediction_op(self.local_input_pls[0],
+        prediction_op, g_structue = self.add_prediction_op(self.local_input_pls[0],
                                                self.path_pls[0],
                                                self.logp_pls[0],
                                                self.sequence_len_pls[0],
                                                self.flattened_idx_offsets[0])
         self.prediction_ops = [prediction_op]
+        self.g_structure_ops = [g_structue]
         for i in xrange(1, self.batch_size):
             with tf.control_dependencies([self.prediction_ops[i - 1]]):
-                prediction_op = self.add_prediction_op(self.local_input_pls[i],
+                prediction_op, g_structue = self.add_prediction_op(self.local_input_pls[i],
                                                        self.path_pls[i],
                                                        self.logp_pls[i],
                                                        self.sequence_len_pls[i],
                                                        self.flattened_idx_offsets[i])
                 self.prediction_ops.append(prediction_op)
+                self.g_structure_ops.append(g_structue)
 
         self.loss_op = self.add_loss_op()
         self.train_op = self.add_training_ops()
@@ -165,7 +167,7 @@ class UGRNN(object):
             prediction_op = UGRNN.apply_OutputNN(outputNN_input,
                                                  config.activation_type)
 
-        return prediction_op
+        return prediction_op, molecule_encoding
 
     @staticmethod
     def cond(sequence_len, step, feature_pl, path_pl, flattened_idx_offset,
@@ -247,12 +249,17 @@ class UGRNN(object):
             tf.square(tf.sub(self.prediction_ops[i], self.target_pls[i])) for i
             in xrange(0, self.batch_size)]
         loss_op = tf.add_n(loss_op, name=None) / 2
+
         return loss_op
 
-    def train(self, sess, epochs, train_dataset, validation_dataset):
+    def train(self, sess, epochs, train_dataset, validation_dataset, output_dir):
+
+        merged_summaries = tf.summary.merge_all()
+        train_writer = tf.train.SummaryWriter(output_dir + '/train', sess.graph)
 
         train_metric = self.evaluate(sess, train_dataset)
         validation_metric = self.evaluate(sess, validation_dataset)
+        train_results_file_path = os.path.join(output_dir, "train_result.csv")
 
         plt.subplot(2, 1, 1)
         plt.title('Training data set')
@@ -266,11 +273,15 @@ class UGRNN(object):
         logger.info('Start Training')
 
         steps_in_epoch = train_dataset.num_examples // self.batch_size
+        # self.get_g_structure(sess,train_dataset)
 
         for epoch in xrange(0, epochs):
             for i in xrange(0, steps_in_epoch):
                 feed_dict = self.fill_feed_dict(train_dataset, self.batch_size)
-                _ = sess.run([self.train_op], feed_dict=feed_dict)
+                _= sess.run([self.train_op], feed_dict=feed_dict)
+
+            summ = sess.run(merged_summaries)
+            train_writer.add_summary(summ, epoch)
 
             train_dataset.reset_epoch(permute=True)
 
@@ -295,6 +306,7 @@ class UGRNN(object):
                                validation_metric[1],
                                precision=8))
 
+        save_results(train_results_file_path, train_dataset.labels, self.predict(sess, train_dataset))
         logger.info('Training Finished')
 
     def evaluate(self, sess,  dataset):
@@ -310,6 +322,16 @@ class UGRNN(object):
             prediction_value = sess.run([self.prediction_ops[0]], feed_dict=feed_dict)
             predictions[i] = np.mean(prediction_value)
         return predictions
+
+    def get_g_structure(self,sess,dataset):
+        dataset.reset_epoch()
+        g_structures = np.empty((dataset.num_examples, self.encoding_nn_output_size))
+        for i in xrange(0, dataset.num_examples):
+            feed_dict = self.fill_feed_dict(dataset, 1)
+            g_structure = sess.run([self.g_structure_ops[0]], feed_dict=feed_dict)
+            print(g_structure)
+            # g_structures[i,:] = g_structure
+        return g_structure
 
     def fill_feed_dict(self, dataset, batch_size):
         assert batch_size <= self.batch_size

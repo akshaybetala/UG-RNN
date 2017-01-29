@@ -52,8 +52,7 @@ def main(_):
         init = tf.global_variables_initializer()
         sess.run(init)
         logger.info('Run the Op to initialize the variables')
-        ugrnn_model.train(sess, FLAGS.max_epochs, train_dataset, validation_dataset)
-
+        ugrnn_model.train(sess, FLAGS.max_epochs, train_dataset, validation_dataset, model_dir)
         ugrnn_model.save_model(sess, model_dir, FLAGS.max_epochs)
 
 
@@ -67,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_name', type=str, default='default_model',
                         help='Name of the model')
 
-    parser.add_argument('--max_epochs', type=int, default=300,
+    parser.add_argument('--max_epochs', type=int, default=200,
                         help='Number of epochs to run trainer.')
 
     parser.add_argument('--batch_size', type=int, default=10,

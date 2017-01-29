@@ -13,22 +13,13 @@ import numpy as np
 
 from ugrnn.input_data import DataSet
 from ugrnn.ugrnn import UGRNN
-from ugrnn.utils import model_params, get_metric
+from ugrnn.utils import model_params, get_metric, save_results
 
 np.set_printoptions(threshold=np.inf)
 
 import tensorflow as tf
 
 FLAGS = None
-
-
-def save_results(file_path, targets, predictions):
-    data = np.array([targets, predictions])
-    data = data.T
-    f = open(file_path, 'w+')
-    np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'], header="Target, Prediction", comments="")
-    f.close()
-
 
 def get_prediction_from_model(model_name, encoding_nn_hidden_size, encoding_nn_output_size,
                               output_nn_hidden_size, test_dataset, validation_dataset):

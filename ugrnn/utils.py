@@ -47,6 +47,14 @@ def read_csv(filename, smile_name, target_name, logp_name=None):
     return np.asarray(data, dtype=dt)
 
 
+def save_results(file_path, targets, predictions):
+    data = np.array([targets, predictions])
+    data = data.T
+    f = open(file_path, 'w+')
+    np.savetxt(f, data, delimiter=',', fmt=['%.4f', '%.4f'], header="Target, Prediction", comments="")
+    f.close()
+
+
 def model_params(s):
     try:
         x, y, z = map(int, s.split(','))

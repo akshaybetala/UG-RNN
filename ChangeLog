@@ -1,6 +1,7 @@
 CHANGES
 =======
 
+* Trained models for Delaney and Huuskonen data sets
 * Logistic regression model for combining ensemble
 * Split delaney data set and minor changes
 * Restructuring code

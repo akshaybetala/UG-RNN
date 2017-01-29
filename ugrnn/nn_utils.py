@@ -17,6 +17,19 @@ def get_activation_fun(activation_fun):
             "Inavlid activation function {}".format(activation_fun))
 
 
+def variable_summaries(var):
+    """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+    with tf.name_scope('summaries'):
+        mean = tf.reduce_mean(var)
+        tf.summary.scalar('mean', mean)
+        with tf.name_scope('stddev'):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+        tf.summary.scalar('stddev', stddev)
+        tf.summary.scalar('max', tf.reduce_max(var))
+        tf.summary.scalar('min', tf.reduce_min(var))
+        tf.summary.histogram('histogram', var)
+
+
 def get_initializer(initializer):
     if initializer == 'xavier':
         return tf.contrib.layers.xavier_initializer(uniform=False)
@@ -34,6 +47,8 @@ def weight_variable(shape, initializer, collection=None):
                               initializer=initializer,
                               trainable=True,
                               collections=['variables', collection])
+    variable_summaries(weights)
+
     return weights
 
 
